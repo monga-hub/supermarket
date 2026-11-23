@@ -1,11 +1,11 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Nonna al Supermercato</title>
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="Supermarket">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap">
+<style>/* VT323 (pixel, lettere ben distinte) ingrandito: occupa lo stesso spazio del vecchio font */@font-face{font-family:"Gioco";src:url(vt323.woff2) format("woff2");size-adjust:130%;font-weight:400 800}</style>
 <style>
 /* Supermercato componibile: stanza a griglia isometrica, mobili a moduli, nuova disposizione a ogni partita */
 :root{--ink:#1c3a24;--paper:#f8f4e0;--mint:#a8e4b4;--gold:#e8c878;--red:#d83030;color-scheme:dark}
-html,body{height:100%;margin:0;background:#141018;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;font-family:"Pixelify Sans",ui-monospace,monospace}
+html,body{height:100%;margin:0;background:#141018;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;font-family:"Gioco",ui-monospace,monospace}
 canvas{position:fixed;inset:0;width:100%;height:100%}
 #hud{position:fixed;left:calc(10px + env(safe-area-inset-left,0px));top:calc(10px + env(safe-area-inset-top,0px));background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:4px;padding:6px 12px 8px;box-shadow:4px 4px 0 rgba(0,0,0,.35);min-width:120px}
 #hud b{display:block;font-size:15px;color:var(--red);letter-spacing:.06em}
@@ -20,7 +20,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 #over h1{margin:0 0 6px;font-size:26px;color:var(--red);text-wrap:balance}#over p{margin:6px 0;font-size:16px;line-height:1.35}
 #stick{position:fixed;left:calc(22px + env(safe-area-inset-left,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));width:124px;height:124px;border-radius:50%;background:rgba(20,30,24,.35);border:3px solid rgba(248,244,224,.7)}
 #knob{position:absolute;left:35px;top:35px;width:54px;height:54px;border-radius:50%;background:var(--paper);border:3px solid var(--ink);box-sizing:border-box;pointer-events:none}
-.btn{position:fixed;border-radius:50%;border:3px solid var(--ink);font:700 15px "Pixelify Sans",monospace;display:grid;place-items:center;padding:0;box-shadow:inset 0 -5px 0 rgba(0,0,0,.2),3px 3px 0 rgba(0,0,0,.35)}
+.btn{position:fixed;border-radius:50%;border:3px solid var(--ink);font:700 15px "Gioco",monospace;display:grid;place-items:center;padding:0;box-shadow:inset 0 -5px 0 rgba(0,0,0,.2),3px 3px 0 rgba(0,0,0,.35)}
 .btn:active{transform:scale(.94)}.btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
 #prendi{right:calc(22px + env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));width:98px;height:98px;background:#b8c8b0;color:var(--ink);opacity:.75}
 #prendi.on{background:var(--gold);opacity:1}
@@ -31,7 +31,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 #coda,#turno,#mturno,#mcoda{background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:4px;padding:4px 10px 6px;box-shadow:4px 4px 0 rgba(0,0,0,.35);font-size:13px;min-width:120px}
 .fila b{color:#2a7a40}.fila ol{margin:2px 0 5px;padding:0 0 0 18px;line-height:1.35}.fila li.me{color:#a0307a;font-weight:700}.fila li.call{background:#ffe6a0}.fila li.none{list-style:none;margin-left:-18px;opacity:.6}
 #mcoda b{color:#a02020}#mturno{font-weight:700;font-size:14px}#mturno.red{color:#c02020;background:#ffe0d8}#mturno.go{background:#d8f4dc}
-#prenota{display:block;width:100%;min-height:34px;font:700 14px "Pixelify Sans",monospace;border:2px solid var(--ink);border-radius:4px;background:var(--mint);color:var(--ink)}#prenota:disabled{opacity:.5}
+#prenota{display:block;width:100%;min-height:34px;font:700 14px "Gioco",monospace;border:2px solid var(--ink);border-radius:4px;background:var(--mint);color:var(--ink)}#prenota:disabled{opacity:.5}
 /* orologio del turno: bianco in attesa, verde quando tocca a te, rosso che si svuota nei 5s per presentarti */
 #oro{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;min-height:34px}#oro[hidden],#prenota[hidden]{display:none}
 #oro i{flex:none;width:30px;height:30px;border-radius:50%;border:3px solid var(--ink);background:conic-gradient(var(--c,#fff) calc(var(--p,0)*1turn),#fff 0);position:relative}
@@ -55,9 +55,9 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 #disp{position:absolute;left:11.3%;top:48.1%;width:77%;height:28.7%;color:#9cff9a;font:700 15px ui-monospace,monospace;display:grid;place-items:center;text-align:center;line-height:1.1;text-shadow:0 0 6px #4cff70}
 #bar{position:absolute;left:14%;width:72%;bottom:24%;height:4px;background:rgba(0,0,0,.25)}#bar i{display:block;height:100%;width:0;background:#9cff9a}
 #pad{position:relative;width:160px;aspect-ratio:600/673;background:url(bil-keypad.png) center/100% 100% no-repeat}
-#pad button{position:absolute;background:transparent;border:0;padding:0;font:700 18px "Pixelify Sans",monospace;color:var(--ink);border-radius:4px}
+#pad button{position:absolute;background:transparent;border:0;padding:0;font:700 18px "Gioco",monospace;color:var(--ink);border-radius:4px}
 #pad button:active{background:rgba(40,30,20,.18)}#pad .c,#pad .ok{font-size:12px}
-#fatto{width:64px;height:64px;border:0;background:url(bil-button.png) center/100% 100% no-repeat;font:700 13px "Pixelify Sans",monospace;color:#3a1010}
+#fatto{width:64px;height:64px;border:0;background:url(bil-button.png) center/100% 100% no-repeat;font:700 13px "Gioco",monospace;color:#3a1010}
 #fatto:active{transform:scale(.94)}
 /* lista codici: chi non se li ricorda li consulta (intanto il tempo scorre) */
 #btns{display:flex;gap:12px;align-items:center}
@@ -165,7 +165,7 @@ function prod(c,x,y,kind,a,b){const parts=SHAPES[kind](a,b),P=ART,x0=Math.round(
   c.fillStyle='#24222c';for(const [px,py,w,h] of parts)c.fillRect(x0+px*P-2,y-(py+h)*P-2,w*P+4,h*P+4);
   for(const [px,py,w,h,col] of parts){c.fillStyle=col;c.fillRect(x0+px*P,y-(py+h)*P,w*P,h*P)}
   const [,,w0,h0]=parts[0];c.fillStyle='rgba(255,255,255,.35)';c.fillRect(x0,y-h0*P,2,h0*P);c.fillStyle='rgba(0,0,0,.18)';c.fillRect(x0+w0*P-3,y-h0*P,3,h0*P)}
-function sign(c,x,y,t){c.font='700 26px "Pixelify Sans",monospace';const w=c.measureText(t).width+20;c.fillStyle='#55606a';c.fillRect(x-w/2+8,y-62,3,46);c.fillRect(x+w/2-11,y-62,3,46);
+function sign(c,x,y,t){c.font='700 26px "Gioco",monospace';const w=c.measureText(t).width+20;c.fillStyle='#55606a';c.fillRect(x-w/2+8,y-62,3,46);c.fillRect(x+w/2-11,y-62,3,46);
   c.fillStyle='#2a3a2e';c.fillRect(x-w/2-3,y-19,w+6,38);c.fillStyle='#a8e4b4';c.fillRect(x-w/2,y-16,w,32);c.fillStyle='#1c3a24';c.textAlign='center';c.textBaseline='middle';c.fillText(t,x,y+1)}
 function fruit(c,x,y,n){const [col,r]=FRUIT[n];c.strokeStyle='#2a1c14';c.lineWidth=2.5;
   const ball=(x,y,r,f)=>{c.beginPath();c.arc(x,y,r,0,7);c.fillStyle=f;c.fill();c.stroke()},hi=(x,y,r)=>{c.fillStyle='rgba(255,255,255,.5)';c.fillRect(x-r*.5,y-r*.55,r*.38,r*.38)};
@@ -194,7 +194,7 @@ function fill(c,m,piece,du,cat,rows){if(m.empty)return;const k=KJ[piece],[x0,y0]
 function heap(c,m,fv,du,cat,us,vs,h,s,layers){if(m.empty)return;const [ax,ay]=anchor(m,fv,du),mir=m.ax==='j',V=VAR(cat),pts=[];
   for(const v of vs)for(const u of us)pts.push([u,v]);pts.sort((p,q)=>p[0]-p[1]-(q[0]-q[1]));
   for(let q=0;q<layers;q++)for(const [u,v] of pts){const id=V[ri(V.length)],ph=KJ[id].r[3]*s,lx=u*58+v*58,ly=u*30-v*30-h-q*ph*.85;spr(c,id,ax+(mir?-lx:lx),ay+ly,false,s)}}
-function skewText(c,t,x,y,mir,size,col){c.save();c.translate(x,y);c.transform(1,(mir?-1:1)*30/58,0,1,0,0);c.font='700 '+size+'px "Pixelify Sans",monospace';c.textAlign='center';c.textBaseline='middle';c.lineWidth=size/5;c.strokeStyle='rgba(0,0,0,.6)';c.strokeText(t,0,0);c.fillStyle=col;c.fillText(t,0,0);c.restore()}
+function skewText(c,t,x,y,mir,size,col){c.save();c.translate(x,y);c.transform(1,(mir?-1:1)*30/58,0,1,0,0);c.font='700 '+size+'px "Gioco",monospace';c.textAlign='center';c.textBaseline='middle';c.lineWidth=size/5;c.strokeStyle='rgba(0,0,0,.6)';c.strokeText(t,0,0);c.fillStyle=col;c.fillText(t,0,0);c.restore()}
 const CRATE=42; // altezza di una cassetta in px di gioco
 function crates(c,m,du,n){const [x,y]=anchor(m,1,du),mir=m.ax==='j';for(let k=0;k<n;k++)spr(c,'cassetta',x,y-k*CRATE,mir);
   const lx=58,ly=30*.5-15-n*CRATE+6;return [x+(mir?-lx:lx),y+ly]} // centro della cassetta in cima
@@ -598,7 +598,7 @@ function drawPerson(a){const f=PG[a.who+':'+frameOf(a)],[sx,sy,w,h,ax,ay]=f;
 function occlude(a,x0,x1,y0,y1){const [ai,aj]=toTile(a.x,a.y);
   for(const m of MODS){if(!(ai<m.i+m.w&&aj<m.j+m.d))continue;if(x1<m.bx||x0>m.bx+m.cv.width||y1<m.by||y0>m.by+m.cv.height)continue;
     ctx.save();ctx.beginPath();ctx.rect(x0,y0,x1-x0,y1-y0);ctx.clip();ctx.drawImage(m.cv,m.bx,m.by);ctx.restore()}}
-function tag(x,y,t,fill='#e8c878'){ctx.font='700 40px "Pixelify Sans",monospace';ctx.textAlign='center';ctx.textBaseline='middle';const w=ctx.measureText(t).width+28;
+function tag(x,y,t,fill='#e8c878'){ctx.font='700 40px "Gioco",monospace';ctx.textAlign='center';ctx.textBaseline='middle';const w=ctx.measureText(t).width+28;
   ctx.fillStyle='#1c3a24';ctx.fillRect(x-w/2-4,y-29,w+8,58);ctx.fillStyle=fill;ctx.fillRect(x-w/2,y-25,w,50);ctx.fillStyle='#1c3a24';ctx.fillText(t,x,y+1);ctx.fillRect(x-4,y+25,8,22)}
 const CARTS=()=>{const [x,y]=iso(R-.5,C-3.3),[u,v]=iso(R-.5,C-4.6);return [{deco:'carrelli',x,y},{deco:'cestini',x:u,y:v}]};
 function render(now){
@@ -615,7 +615,7 @@ function render(now){
     const [,,w,h,ax]=drawPerson(a),half=Math.max(ax,w-ax)+4;
     occlude(a,a.x-half,a.x+half,a.y-(a.z||0)-h-4,a.y+8);
     if(a===G){ctx.globalAlpha=.4;drawPerson(a);ctx.globalAlpha=1} // la nonna dietro un mobile si vede in trasparenza
-    if(a===G&&G.bag.length){const t=G.bag.length>1?G.bag.length+' DA PESARE':G.bag[0];ctx.font='700 28px "Pixelify Sans",monospace';ctx.textAlign='center';ctx.textBaseline='middle';const w=ctx.measureText(t).width+20;
+    if(a===G&&G.bag.length){const t=G.bag.length>1?G.bag.length+' DA PESARE':G.bag[0];ctx.font='700 28px "Gioco",monospace';ctx.textAlign='center';ctx.textBaseline='middle';const w=ctx.measureText(t).width+20;
       ctx.fillStyle='#2b1d1f';ctx.fillRect(a.x-w/2-3,a.y-262,w+6,40);ctx.fillStyle='#f8f8f4';ctx.fillRect(a.x-w/2,a.y-259,w,34);ctx.fillStyle='#a0307a';ctx.fillText(t,a.x,a.y-241)}
   }
   if(G&&G.state==='play'){
@@ -636,11 +636,11 @@ function render(now){
   {const h=QUEUE[0];if(h&&!h.weighing){const red=QUEUE.length>1,f=red?QT/WINDOW:1,r=50*(red?1+.08*Math.abs(Math.sin(now/150)):1),x=SCALE.x+(G.bag.length&&!G.weighing?215:0),y=SCALE.y-255; // accanto all'etichetta BILANCIA se c'è, sennò al suo posto
     ctx.fillStyle='#fff';ctx.strokeStyle='#2a2430';ctx.lineWidth=6;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();
     ctx.fillStyle=red?'#e03030':'#5ac070';ctx.beginPath();ctx.moveTo(x,y);ctx.arc(x,y,r,-Math.PI/2,-Math.PI/2+f*2*Math.PI);ctx.fill();ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.stroke();
-    ctx.font='700 44px "Pixelify Sans",monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=5;const t=red?String(Math.ceil(QT)):h===G?'TU':'✓';ctx.strokeText(t,x,y+1);ctx.fillStyle='#fff';ctx.fillText(t,x,y+1)}}
+    ctx.font='700 44px "Gioco",monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=5;const t=red?String(Math.ceil(QT)):h===G?'TU':'✓';ctx.strokeText(t,x,y+1);ctx.fillStyle='#fff';ctx.fillText(t,x,y+1)}}
   if(DEBUG){ctx.fillStyle='rgba(255,0,0,.25)';for(let i=0;i<R;i++)for(let j=0;j<C;j++)if(!free(i,j))poly(ctx,[iso(i,j),iso(i+1,j),iso(i+1,j+1),iso(i,j+1)],'rgba(255,0,0,.25)');
     ctx.strokeStyle='rgba(255,0,255,.5)';ctx.lineWidth=2;NODES.forEach((a,i)=>ADJ[i].forEach(j=>{if(j>i){ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...NODES[j]);ctx.stroke()}}))}
 }
-Promise.all([...[atlas,kit].map(im=>new Promise(r=>im.complete&&im.naturalWidth?r():im.onload=r)),document.fonts.load('700 26px "Pixelify Sans"').catch(()=>{})]).then(()=>{
+Promise.all([...[atlas,kit].map(im=>new Promise(r=>im.complete&&im.naturalWidth?r():im.onload=r)),document.fonts.load('700 26px "Gioco"').catch(()=>{})]).then(()=>{
   start(false);G.state='title';$('over').hidden=DEBUG;intro();READY=true}); // i clienti girano già dietro la schermata iniziale
 let last=performance.now();function loop(t){const dt=Math.min(.05,(t-last)/1000);last=t;
   if(G&&G.state!=='play')NPC.forEach(n=>updateNPC(n,dt));CASH.forEach(c=>updateCash(c,dt));
