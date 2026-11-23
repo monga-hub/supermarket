@@ -3,7 +3,7 @@
 Gioco isometrico in pixel art per telefono: la nonna deve fare la spesa prima che il supermercato chiuda.
 Ogni partita il negozio è generato a caso.
 
-**Gioca:** https://monga-hub.github.io/spesa-della-nonna/nonna-moduli.html
+**Gioca:** https://monga-hub.github.io/supermarket/nonna-moduli.html
 
 - frutta e verdura vanno pesate: prenota la bilancia e digita il codice (lista codici sulla bilancia)
 - la carne si prende in macelleria: prendi il numeretto e aspetta il tuo turno
