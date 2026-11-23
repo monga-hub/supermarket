@@ -70,7 +70,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 #salta{right:calc(124px + env(safe-area-inset-right,0px));bottom:calc(102px + env(safe-area-inset-bottom,0px));width:70px;height:70px;background:#9ac4f0;color:#0c2440}
 </style>
 <canvas id="c"></canvas>
-<div id="hud"><b>LISTA</b><ul id="list"></ul></div>
+<div id="hud"><b id="lvl">LISTA</b><ul id="list"></ul></div>
 <div id="time">2:00</div>
 <div id="msg" hidden></div>
 <div id="dx"><div id="turno"><button id="prenota">PRENOTA</button><div id="oro" hidden><i></i><span></span></div></div><div id="mturno" hidden></div><div id="coda" class="fila"><b>⚖ FILA BILANCIA</b><ol id="qlist"></ol></div><div id="mcoda" class="fila" hidden><b id="mhead">🥩 MACELLERIA</b><ol id="mlist"></ol></div></div>
@@ -95,6 +95,21 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 const atlas=new Image();atlas.src='personaggi2.png?v=2';
 const PG=/*PG*/{"nonna:idle":[0,0,106,205,67,205],"nonna:w1":[108,0,130,207,84,207],"nonna:w2":[240,0,128,207,80,207],"nonna:w3":[370,0,122,207,72,207],"nonna:bidle":[494,0,103,194,60,194],"nonna:b1":[599,0,104,197,62,197],"nonna:b2":[705,0,103,196,63,196],"nonna:b3":[810,0,102,197,59,197],"nonna:reach":[914,0,166,199,81,199],"nonna:bend":[1082,0,156,177,90,177],"nonna:bag":[1240,0,87,201,41,201],"nonna:jump":[0,209,154,191,71,191],"nonna:scale":[156,209,161,200,94,200],"nonna:box":[319,209,121,200,38,200],"nonna:win":[442,209,138,201,70,201],"nonna:lose":[582,209,112,200,51,200],"baffi:idle":[696,209,193,250,133,250],"baffi:w1":[891,209,199,250,140,250],"baffi:w2":[1092,209,193,250,134,250],"baffi:w3":[0,461,191,250,132,250],"baffi:bidle":[193,461,164,221,71,221],"baffi:b1":[359,461,165,221,68,221],"baffi:b3":[526,461,149,221,61,221],"baffi:think":[677,461,204,263,140,263],"baffi:grab":[883,461,279,263,215,263],"mamma:idle":[1164,461,157,245,102,245],"mamma:w1":[0,726,179,244,124,244],"mamma:w2":[181,726,177,244,112,244],"mamma:w3":[360,726,179,244,123,244],"mamma:b1":[541,726,113,229,46,229],"mamma:b2":[656,726,139,229,48,229],"mamma:b3":[797,726,142,229,50,229],"mamma:list":[941,726,180,239,122,239],"mamma:point":[1123,726,181,239,123,239],"mamma:scold":[0,972,182,239,124,239],"anziano:idle":[184,972,155,240,51,240],"anziano:w1":[341,972,154,240,71,240],"anziano:bidle":[497,972,154,244,96,244],"anziano:b1":[653,972,156,247,78,247],"anziano:b2":[811,972,154,237,100,237],"anziano:b3":[967,972,155,247,80,247],"anziano:look":[1124,972,180,238,79,238],"anziano:put":[0,1221,188,237,79,237],"anziano:hat":[190,1221,175,265,78,265],"anziano:cane":[367,1221,217,263,78,263],"ragazzo:idle":[586,1221,98,235,42,235],"ragazzo:w1":[686,1221,134,229,100,229],"ragazzo:w2":[822,1221,149,229,116,229],"ragazzo:w3":[973,1221,169,205,41,205],"ragazzo:bidle":[1144,1221,89,236,54,236],"ragazzo:b1":[1235,1221,141,226,115,226],"ragazzo:b3":[0,1488,155,216,96,216],"ragazzo:skid":[157,1488,214,238,152,238],"ragazzo:grab":[373,1488,136,233,76,233],"ragazzo:trip":[511,1488,205,236,92,236],"ragazzo:sorry":[718,1488,124,244,48,244],"cassieri:f_idle":[844,1488,85,250,42,250],"cassieri:f_scan":[931,1488,126,250,39,250],"cassieri:f_type":[1059,1488,147,250,37,250],"cassieri:f_wave":[1208,1488,120,250,38,250],"cassieri:m_idle":[0,1740,84,254,36,254],"cassieri:m_scan":[86,1740,118,253,32,253],"cassieri:m_type":[206,1740,142,248,31,248],"cassieri:m_wave":[350,1740,118,253,40,253],"macellaio:idle":[470,1740,104,255,35,255],"macellaio:chop":[576,1740,134,263,26,263],"macellaio:give":[712,1740,156,255,30,255],"macellaio:call":[870,1740,151,255,42,255]}/*PG*/; // pose dei personaggi: chiave 'chi:posa' -> [x,y,w,h,piedi x,piedi y], tutte girate a destra
 const T=58,U=30,ART=4,FW=24,FH=55,WALLH=250,MARG=90;
+// LIVELLI: ogni livello dice cosa c'è in lista e quanti clienti girano. Bilancia e macelleria compaiono solo quando servono.
+// fresh = verdure da pesare, pack = confezionati, meat = carne, time = secondi, npc = clienti, txt = spiegazione a inizio livello
+const LEVELS=[
+ {fresh:0,pack:3,meat:0,time:90, npc:1,txt:"Prendi quello che c'è nella lista e vai alla cassa prima che chiuda."},
+ {fresh:0,pack:4,meat:0,time:90, npc:2,txt:"Più cose da prendere e più clienti in giro. Se ti bloccano la strada: SPINGI!"},
+ {fresh:1,pack:2,meat:0,time:100,npc:2,txt:"NOVITÀ: la BILANCIA! Frutta e verdura vanno pesate: prenota la bilancia e digita il codice scritto sulla cassetta."},
+ {fresh:2,pack:2,meat:0,time:110,npc:3,txt:"Due verdure da pesare: puoi metterle nel sacchetto e pesarle una dopo l'altra."},
+ {fresh:2,pack:1,meat:1,time:120,npc:3,txt:"NOVITÀ: la MACELLERIA! Prendi il numeretto al distributore e aspetta il tuo turno: se lo perdi, torni in fondo alla coda."},
+ {fresh:3,pack:1,meat:1,time:120,npc:4,txt:"Spesa completa: verdura, carne e confezionati."},
+];
+// dopo l'ultimo: come l'ultimo, un confezionato in più e 5 secondi in meno a livello (minimo 90)
+const lv=n=>n<LEVELS.length?LEVELS[n]:{...LEVELS.at(-1),pack:2,time:Math.max(90,120-5*(n-LEVELS.length+1)),txt:'Il supermercato chiude sempre prima!'};
+let LV=0;try{LV=+(localStorage.getItem('nonna-lv')||0)}catch{}
+{const h=location.hash.match(/lv=(\d+)/);if(h)LV=Math.max(0,h[1]-1)} // #lv=5 apre il livello 5 (per provare)
+const saveLV=()=>{try{localStorage.setItem('nonna-lv',LV)}catch{}};
 let MAC,MAC_NODE,R,C,OX,OY,BW=2000,BH=1400,CELL,MODS=[],SPOTS=[],NODES=[],ADJ=[],SCALE,SCALE_STAND,SCALE_NODE,CASSE=[],START,STAGE;
 const iso=(i,j,h=0)=>[OX+(i-j)*T,OY+(i+j)*U-h];
 const toTile=(x,y)=>{const a=(x-OX)/T,b=(y-OY)/U;return [(a+b)/2,(b-a)/2]};
@@ -217,7 +232,7 @@ function tryLevel(){
   // parete destra (j=0): frigoriferi e scaffali a muro
   for(let i=1;i<R-2;){let fr=Math.random()<.55,L=fr?2:3;if(i+L>R-1){if(i+2>R-1)break;fr=true;L=2}wallUnit('i',i,0,L,fr);i+=L+(Math.random()<.25?1:0)}
   // parete sinistra (i=0): banco del pane e scaffali a muro
-  const mj=2+ri(C-10);put(mk('macelleria','j',0,mj,4,2,{wall:true})); // macelleria: profonda 2 (macellaio dietro), lunga 4 (bancone + distributore)
+  const L=lv(LV),mj=L.meat?2+ri(C-10):-99;if(L.meat)put(mk('macelleria','j',0,mj,4,2,{wall:true})); // macelleria: profonda 2 (macellaio dietro), lunga 4 (bancone + distributore)
   for(let t=0;t<20&&!put(mk('pane','j',0,1+ri(C-6),2,1,{wall:true,cat:'PANE'}));t++);
   for(let t=0;t<20;t++){const j=1+ri(C-5);if([0,1,2].every(k=>free(0,j+k))){put(mk('salumi','j',0,j,3,1,{wall:true,cat:'FORMAGGI'}));break}}
   for(let j=1;j<C-1;){const fr=Math.random()<.3,L=fr?2:3;let ok=j+L<=C-1;for(let k=0;k<L&&ok;k++)ok=free(0,j+k);if(!ok){j++;continue}wallUnit('j',0,j,L,fr);j+=L+(Math.random()<.25?1:0)}
@@ -227,7 +242,7 @@ function tryLevel(){
   const fruitBack=Math.random()<.5,fruitRows=fruitBack?[4,8]:[C-7,C-3],gz=fruitBack?[12,C-3]:[4,C-11];
   const fresh=shuffle(Object.keys(FRUIT));let fk=0;
   const gaps=[];for(const j of fruitRows)for(let i=4;i+2<=(j>=10?R-2:R-5);i+=4){put(mk('frutta','i',i,j,2,1,{items:[fresh[fk++%fresh.length],fresh[fk++%fresh.length]]}));if(j===fruitRows[0]&&i+2<=R-6)gaps.push(i+2)}
-  const gi=gaps[ri(gaps.length)],sj=fruitRows[0];put(mk('bilancia','i',gi,sj,1,1));
+  const gi=gaps[ri(gaps.length)],sj=fruitRows[0];if(L.fresh)put(mk('bilancia','i',gi,sj,1,1));
   if(Math.random()<.5)for(let j=gz[0];j<=gz[1];j+=4)for(let i=4+ri(2),e=j>=10?R-2:R-5;i+4<=e;i+=6+ri(2))put(mk('scaffale','i',i,j,4,1,{cat:packs[pk++%packs.length]}))
   else for(let i=4;i<=R-6;i+=4)for(let j=gz[0]+ri(2);j+4<=gz[1]+1;j+=6+ri(2))put(mk('scaffale','j',i,j,4,1,{cat:packs[pk++%packs.length]}))
   // testate in fondo alle file che danno su uno spazio libero
@@ -244,7 +259,7 @@ function tryLevel(){
   START=[R-1.5,C-1.5];const seen=new Set([(R-2)+','+(C-2)]),q=[[R-2,C-2]];
   while(q.length){const [a,b]=q.shift();for(const [da,db] of [[1,0],[-1,0],[0,1],[0,-1]]){const k=(a+da)+','+(b+db);if(free(a+da,b+db)&&!seen.has(k)){seen.add(k);q.push([a+da,b+db])}}}
   const reach=m=>{for(let a=m.i-1;a<=m.i+m.w;a++)for(let b=m.j-1;b<=m.j+m.d;b++)if(seen.has(a+','+b))return true;return false};
-  return free(R-2,C-2)&&seen.has('2,'+(mj+1))&&seen.has('2,'+(mj+3))&&MODS.every(reach)&&seen.has(gi+','+(sj+1))}
+  return free(R-2,C-2)&&(!L.meat||seen.has('2,'+(mj+1))&&seen.has('2,'+(mj+3)))&&MODS.every(reach)&&(!L.fresh||seen.has(gi+','+(sj+1)))}
 
 function newLevel(){
   let n=0;while(!tryLevel()&&n++<60);
@@ -252,8 +267,8 @@ function newLevel(){
   tryCoords();buildStage();buildNav()}
 function tryCoords(){ // il generatore lavora in caselle: qui converto casse e bilancia in pixel
   CASSE=MODS.filter(m=>m.type==='cassa').map(m=>iso(m.i+1.5,m.j+2.6));
-  {const m=MODS.find(m=>m.type==='macelleria');MAC={m,stand:iso(m.i+2.45,m.j+1.5),disp:iso(m.i+2.3,m.j+3.5),but:iso(m.i+.6,m.j+1.6)}}
-  const s=MODS.find(m=>m.type==='bilancia');SCALE={x:iso(s.i+.5,s.j+.5)[0],y:iso(s.i+.5,s.j+.5)[1]};SCALE_STAND=iso(s.i+.5,s.j+1.6);
+  {const m=MODS.find(m=>m.type==='macelleria');MAC=m&&{m,stand:iso(m.i+2.45,m.j+1.5),disp:iso(m.i+2.3,m.j+3.5),but:iso(m.i+.6,m.j+1.6)}}
+  const s=MODS.find(m=>m.type==='bilancia');SCALE=s&&{x:iso(s.i+.5,s.j+.5)[0],y:iso(s.i+.5,s.j+.5)[1]};SCALE_STAND=s&&iso(s.i+.5,s.j+1.6);
   SPOTS=[];for(const m of MODS){if(!m.cat&&!m.items)continue;
     for(let a=m.i;a<m.i+m.w;a++)for(let b=m.j;b<m.j+m.d;b++)SPOTS.push({i:a+.5,j:b+.5,n:m.items?m.items[m.ax==='i'?a-m.i:b-m.j]:m.cat,m})}}
 
@@ -284,7 +299,7 @@ function buildNav(){NODES=[];ADJ=[];const id={}; // un nodo al centro di ogni ca
   const comp=new Array(NODES.length).fill(-1);let best=-1,bestN=0;
   for(let i=0;i<NODES.length;i++){if(comp[i]>=0||!ADJ[i].length)continue;const q=[i];comp[i]=i;let n=0;while(q.length){const k=q.pop();n++;for(const m of ADJ[k])if(comp[m]<0){comp[m]=i;q.push(m)}}if(n>bestN){bestN=n;best=i}}
   ADJ=ADJ.map((l,i)=>comp[i]===best?l:[]);
-  SCALE_NODE=nearestNode(...SCALE_STAND);MAC_NODE=nearestNode(...MAC.stand)}
+  SCALE_NODE=SCALE&&nearestNode(...SCALE_STAND);MAC_NODE=MAC&&nearestNode(...MAC.stand)}
 const nearestNode=(x,y)=>{let b=0,bd=1e9;NODES.forEach(([nx,ny],i)=>{const d=Math.hypot(nx-x,ny-y);if(d<bd&&ADJ[i].length){bd=d;b=i}});return b};
 function pathTo(a,b){const prev=new Map([[a,-1]]),q=[a];while(q.length){const n=q.shift();if(n===b)break;for(const m of ADJ[n])if(!prev.has(m)){prev.set(m,n);q.push(m)}}
   if(!prev.has(b))return null;const p=[];for(let n=b;n!==-1;n=prev.get(n))p.unshift(NODES[n]);return p}
@@ -322,9 +337,9 @@ function updateMac(dt){const h=MQ[0];if(!h||h.serving||MQ.length<2||(MT-=dt)>0)r
 function updateBut(dt){if(!BUT)return;const s=MQ[0]&&MQ[0].serving?MQ[0]:null;
   if(s)BUT.pose=s.serveT<1?'give':(s.serveT*3|0)%2?'chop':'idle';
   else if(BUT.callT>0){BUT.callT-=dt;BUT.pose='call'}else if((BUT.t-=dt)<=0){BUT.pose=Math.random()<.3?'chop':'idle';BUT.t=rnd(1,2.5)}}
-const nearMac=(p,r=120)=>MAC&&Math.hypot(G.x-p[0],(G.y-p[1])*1.3)<r;
+const nearMac=(k,r=120)=>!!MAC&&Math.hypot(G.x-MAC[k][0],(G.y-MAC[k][1])*1.3)<r;
 const needMeat=()=>G.list.some(e=>e.n==='CARNE'&&!e.got);
-let mHtml='';function drawMac(){const near=G&&G.state==='play'&&(G.serving||nearMac(MAC.stand,360));$('mcoda').hidden=!near;
+let mHtml='';function drawMac(){if(!MAC){$('mcoda').hidden=$('mturno').hidden=true;return}const near=G&&G.state==='play'&&(G.serving||nearMac('stand',360));$('mcoda').hidden=!near;
   if(near){const h=MQ.map((a,k)=>`<li class="${a===G?'me':''} ${k?'':'call'}">${pad2(a.ticket)} ${NAME[a.who]}${k?'':a.serving?' · servito':MQ.length>1?' · '+Math.ceil(MT)+'s':''}</li>`).join('')||'<li class="none">nessuno</li>';
     if(h!==mHtml)$('mlist').innerHTML=mHtml=h;$('mhead').textContent='🥩 MACELLERIA · ORA '+pad2(MQ[0]?MQ[0].ticket:LAST)}
   const k=G?MQ.indexOf(G):-1,t=$('mturno');t.hidden=k<0||near;if(t.hidden)return;
@@ -334,31 +349,33 @@ function start(keepLevel){
   if(!keepLevel)newLevel();
   const [sx,sy]=iso(...START);
   const names=[...new Set(SPOTS.map(s=>s.n))];
-  G=Object.assign(newActor('nonna',sx,sy),{state:'play',z:0,vz:0,time:120,bag:[],weighed:[],weighing:false,wasHead:false,msgT:0,front:false,
-    list:[...shuffle(names.filter(n=>FRESH.has(n))).slice(0,3),...shuffle(names.filter(n=>!FRESH.has(n))).slice(0,1),'CARNE'].map(n=>({n,got:false}))});
+  G=Object.assign(newActor('nonna',sx,sy),{state:'play',z:0,vz:0,time:lv(LV).time,bag:[],weighed:[],weighing:false,wasHead:false,msgT:0,front:false,
+    list:[...shuffle(names.filter(n=>FRESH.has(n))).slice(0,lv(LV).fresh),...shuffle(names.filter(n=>!FRESH.has(n))).slice(0,lv(LV).pack),...(lv(LV).meat?['CARNE']:[])].map(n=>({n,got:false}))});
   shuffle(G.list);
   // ogni partita nuovi codici bilancia (2 cifre, tutti diversi): si leggono passando accanto alle cassette
   const used=new Set();CODE={};for(const n of FRESH){let c;do c=10+ri(90);while(used.has(c));used.add(c);CODE[n]=String(c)}
   QUEUE=[];QT=WINDOW;$('bil').hidden=true;MQ=[];MT=WINDOW;TICK=1+ri(60);LAST=TICK-1||99;
-  BUT=Object.assign(newActor('macellaio',...MAC.but),{flip:false,pose:'idle',t:1,callT:0});
+  BUT=MAC&&Object.assign(newActor('macellaio',...MAC.but),{flip:false,pose:'idle',t:1,callT:0});
   const far=shuffle(NODES.map((p,i)=>i).filter(i=>ADJ[i].length&&Math.hypot(NODES[i][0]-G.x,NODES[i][1]-G.y)>450));
-  NPC=CAST.map((c,k)=>{const [x,y]=NODES[far[(k*7)%far.length]];return Object.assign(newActor(c.who,x,y),c,{rx:c.cart?52:24,ry:c.cart?24:12,path:[],pause:rnd(.2,2),stuck:0})});
+  NPC=CAST.slice(0,lv(LV).npc).map((c,k)=>{const [x,y]=NODES[far[(k*7)%far.length]];return Object.assign(newActor(c.who,x,y),c,{rx:c.cart?52:24,ry:c.cart?24:12,path:[],pause:rnd(.2,2),stuck:0})});
   CASH=MODS.filter(m=>m.type==='cassa').map((m,k)=>{const [x,y]=iso(m.i+1.4,m.j+.5);return Object.assign(newActor('cassieri',x,y),{flip:true,base:k?'m_':'f_',pose:(k?'m_':'f_')+'idle',t:rnd(.5,2)})});
-  $('over').hidden=true;drawList()}
+  $('over').hidden=true;$('lvl').textContent='LV '+(LV+1)+' · LISTA';drawList()}
 function drawList(){$('list').innerHTML=G.list.map(e=>`<li class="${e.got?'got':G.bag.includes(e.n)?'hand':''}">${e.n}${FRESH.has(e.n)&&!e.got?' <small>⚖</small>':''}${e.n==='CARNE'&&!e.got?' <small>🎫</small>':''}</li>`).join('')}
 function say(t,d=1.6){G.msgT=d;$('msg').textContent=t;$('msg').hidden=false}
-function end(win){$('bil').hidden=true;G.weighing=false;G.state=win?'win':'lose';G.pose=win?'win':'lose';G.poseT=1e9;$('over').hidden=false;$('over').querySelector('h1').textContent=win?'Spesa fatta!':'Il supermercato chiude!';$('cta').textContent='Tocca PRENDI per un nuovo supermercato';
+function intro(){const L=lv(LV),o=$('over');o.querySelector('h1').textContent='Livello '+(LV+1);
+  $('overTxt').textContent=L.txt+' Hai '+L.time+' secondi.';$('cta').textContent='Tocca PRENDI per iniziare'}
+function end(win){$('bil').hidden=true;G.weighing=false;G.state=win?'win':'lose';G.pose=win?'win':'lose';G.poseT=1e9;$('over').hidden=false;$('over').querySelector('h1').textContent=win?'Livello '+(LV+1)+' superato!':'Il supermercato chiude!';$('cta').textContent=win?'Tocca PRENDI per il livello '+(LV+2):'Tocca PRENDI per riprovare il livello '+(LV+1);if(win){LV++;saveLV()}
   $('overTxt').textContent=win?`Ce l'hai fatta con ${Math.ceil(G.time)} secondi di anticipo.`:`Ti mancavano: ${G.list.filter(e=>!e.got).map(e=>e.n.toLowerCase()).join(', ')}.`}
-const nearScale=(r=110)=>Math.hypot(G.x-SCALE_STAND[0],(G.y-SCALE_STAND[1])*1.3)<r;
+const nearScale=(r=110)=>!!SCALE&&Math.hypot(G.x-SCALE_STAND[0],(G.y-SCALE_STAND[1])*1.3)<r;
 function target(){const [gi,gj]=toTile(G.x,G.y);let best=null,bd=1.25;for(const s of SPOTS){const d=Math.hypot(s.i-gi,s.j-gj);if(d<bd){bd=d;best=s}}return best}
 function pick(){
   if(!READY)return;
-  if(!G||G.state!=='play'){start(G&&G.state==='title');return}
+  if(!G||G.state!=='play'){if(G&&G.state!=='title'){start(false);G.state='title';$('over').hidden=false;intro();return}start(true);return}
   if(G.weighing||G.serving)return;
-  if(nearMac(MAC.disp)&&!MQ.includes(G)){if(!needMeat())return say('La carne non è nella lista');takeTicket(G);act(G,'reach',.4);say('Hai preso il numero '+pad2(G.ticket));return beep(900,.06)}
-  if(MQ.includes(G)&&nearMac(MAC.stand,140)){if(MQ[0]!==G){say('Hai il '+pad2(G.ticket)+': ora servono il '+pad2(MQ[0].ticket));return beep(180,.15,'sawtooth')}
+  if(nearMac('disp')&&!MQ.includes(G)){if(!needMeat())return say('La carne non è nella lista');takeTicket(G);act(G,'reach',.4);say('Hai preso il numero '+pad2(G.ticket));return beep(900,.06)}
+  if(MQ.includes(G)&&nearMac('stand',140)){if(MQ[0]!==G){say('Hai il '+pad2(G.ticket)+': ora servono il '+pad2(MQ[0].ticket));return beep(180,.15,'sawtooth')}
     G.serving=true;G.serveT=G.serveMax=SERVE;return beep(700,.06)}
-  if(needMeat()&&nearMac(MAC.stand,140))return say('Prima prendi il numero al distributore!');
+  if(needMeat()&&nearMac('stand',140))return say('Prima prendi il numero al distributore!');
   if(G.bag.length&&nearScale()){
     if(!QUEUE.includes(G))book(G);
     if(QUEUE[0]===G)return openBil();
@@ -444,8 +461,8 @@ function updateNPC(n,dt){
   if(w&&!n.goal){n.path=[];n.pause=0;n.pose=null}
   if(n.pause>0){n.pause-=dt;if(n.pause<=0)n.pose=null;return}
   if(!n.path.length){
-    if(!QUEUE.includes(n)&&n.scaleCD<=0&&QUEUE.length<4&&Math.random()<(n.cart?.2:.35))book(n);
-    if(!MQ.includes(n)&&n.macCD<=0&&MQ.length<4&&Math.random()<.25)takeTicket(n);
+    if(SCALE&&!QUEUE.includes(n)&&n.scaleCD<=0&&QUEUE.length<4&&Math.random()<(n.cart?.2:.35))book(n);
+    if(MAC&&!MQ.includes(n)&&n.macCD<=0&&MQ.length<4&&Math.random()<.25)takeTicket(n);
     const g=want(),dest=g==='scale'?SCALE_NODE:g==='mac'?MAC_NODE:(()=>{let i;do i=Math.random()*NODES.length|0;while(!ADJ[i].length);return i})();
     n.path=pathTo(nearestNode(n.x,n.y),dest)||[];n.goal=g;n.stuck=0;if(!n.path.length)n.pause=1;return}
   if(n.goal&&(n.goal==='scale'?QUEUE:MQ)[0]!==n&&n.path.length<=2){n.front=false;return} // il prossimo aspetta a due passi
@@ -478,7 +495,7 @@ function update(dt){
     if(G.list.every(e=>e.got)){end(true);[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.12),i*120))}
     else if(G.bag.length&&G.msgT<=0)say('La cassiera: «Signora, la frutta va pesata!»')}
   const t=Math.ceil(G.time);$('time').textContent=Math.floor(t/60)+':'+String(t%60).padStart(2,'0');$('time').style.color=t<=10?'#ffd040':'#ff5040';
-  const canWeigh=G.bag.length&&nearScale(),tk=!MQ.includes(G)&&needMeat()&&nearMac(MAC.disp),ord=MQ[0]===G&&nearMac(MAC.stand,140)&&!G.serving;
+  const canWeigh=G.bag.length&&nearScale(),tk=!MQ.includes(G)&&needMeat()&&nearMac('disp'),ord=MQ[0]===G&&nearMac('stand',140)&&!G.serving;
   $('prendi').textContent=tk?'NUMERO':ord?'ORDINA':canWeigh?'PESA':'PRENDI';$('prendi').classList.toggle('on',!!(target()||canWeigh||tk||ord));
 }
 
@@ -523,8 +540,8 @@ function render(now){
   // display della macelleria: numero chiamato in rosso, lampeggia mentre scadono i 5 s
   if(MAC&&MAC.m.disp){const [x,y]=MAC.m.disp,h=MQ[0],blink=h&&!h.serving&&MQ.length>1&&(now/250|0)%2;skewText(ctx,pad2(h?h.ticket:LAST),x,y,true,34,blink?'#ffd040':'#ff3a2a')}
   if(G&&G.state==='play'&&MAC){const has=MQ.includes(G),b=Math.sin(now/180)*8;
-    if(needMeat()&&!has&&nearMac(MAC.disp,330)&&!nearMac(MAC.disp))tag(MAC.disp[0],MAC.disp[1]-175+b,'🎫 NUMERO','#f0c0a0');
-    if(MQ[0]===G&&!G.serving)tag(MAC.stand[0],MAC.stand[1]-200+b,nearMac(MAC.stand,140)?'ORDINA QUI':'🥩 TOCCA A TE','#ffe6a0')}
+    if(needMeat()&&!has&&nearMac('disp',330)&&!nearMac('disp'))tag(MAC.disp[0],MAC.disp[1]-175+b,'🎫 NUMERO','#f0c0a0');
+    if(MQ[0]===G&&!G.serving)tag(MAC.stand[0],MAC.stand[1]-200+b,nearMac('stand',140)?'ORDINA QUI':'🥩 TOCCA A TE','#ffe6a0')}
   for(const a of [G,...NPC])if(a&&a.serving){const y=a.y-PG[a.who+':'+frameOf(a)][3]-24;ctx.fillStyle='#3a1c1c';ctx.fillRect(a.x-48,y,96,20);ctx.fillStyle='#ff8a7a';ctx.fillRect(a.x-44,y+4,88*(1-a.serveT/a.serveMax),12)}
   for(const a of NPC)if(a.weighing){const y=a.y-PG[a.who+':'+frameOf(a)][3]-24;ctx.fillStyle='#1c3a24';ctx.fillRect(a.x-48,y,96,20);ctx.fillStyle='#7cf08a';ctx.fillRect(a.x-44,y+4,88*(1-a.weighT/a.weighMax),12)} // barra della pesata sopra la testa, sopra a tutto
   // orologio sopra la bilancia: verde se il primo della fila può andare con calma, rosso che si svuota nei 5s se c'è gente dietro
@@ -536,7 +553,7 @@ function render(now){
     ctx.strokeStyle='rgba(255,0,255,.5)';ctx.lineWidth=2;NODES.forEach((a,i)=>ADJ[i].forEach(j=>{if(j>i){ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...NODES[j]);ctx.stroke()}}))}
 }
 Promise.all([...[atlas,kit].map(im=>new Promise(r=>im.complete&&im.naturalWidth?r():im.onload=r)),document.fonts.load('700 26px "Pixelify Sans"').catch(()=>{})]).then(()=>{
-  start(false);G.state='title';$('over').hidden=DEBUG;READY=true}); // i clienti girano già dietro la schermata iniziale
+  start(false);G.state='title';$('over').hidden=DEBUG;intro();READY=true}); // i clienti girano già dietro la schermata iniziale
 let last=performance.now();function loop(t){const dt=Math.min(.05,(t-last)/1000);last=t;
   if(G&&G.state!=='play')NPC.forEach(n=>updateNPC(n,dt));CASH.forEach(c=>updateCash(c,dt));
   if(G&&G.state!=='play'){updateQueue(dt);drawQueue();updateMac(dt)}updateBut(dt);update(dt);render(t);requestAnimationFrame(loop)}
