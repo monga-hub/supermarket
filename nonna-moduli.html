@@ -10,7 +10,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 #hud{position:fixed;left:calc(10px + env(safe-area-inset-left,0px));top:calc(10px + env(safe-area-inset-top,0px));background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:4px;padding:6px 12px 8px;box-shadow:4px 4px 0 rgba(0,0,0,.35);min-width:120px}
 #hud b{display:block;font-size:15px;color:var(--red);letter-spacing:.06em}
 #hud ul{list-style:none;margin:4px 0 0;padding:0;font-size:15px;line-height:1.35}
-#hud li::before{content:"□ "}#hud li.hand{color:#a0307a}#hud li.hand::before{content:"✋ "}#hud li small{font-size:11px;opacity:.7}#hud li.got{text-decoration:line-through;opacity:.45}#hud li.got::before{content:"■ "}
+#hud li::before{content:"□ "}#hud li.hand{color:#a0307a}#hud li.hand::before{content:"✋ "}#hud li small{font-size:11px;opacity:.7}#hud li.got{text-decoration:line-through;opacity:.45}#hud li.got::before{content:"■ "}#hud li.nu{color:#c03020;font-weight:800}
+#choice button{font:800 14px/1.2 system-ui,sans-serif;padding:8px 10px;margin:4px;border:3px solid var(--ink);border-radius:6px;background:#fff;color:var(--ink)}
 #time{position:fixed;right:calc(10px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));background:#2a0c10;color:#ff5040;border:3px solid #1a1420;border-radius:4px;padding:2px 12px;font-size:28px;font-variant-numeric:tabular-nums;box-shadow:4px 4px 0 rgba(0,0,0,.35)}
 #msg{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--mint);color:var(--ink);border:3px solid var(--ink);border-radius:4px;padding:4px 14px;font-size:18px;font-weight:700}
 #over[hidden]{display:none}
@@ -86,7 +87,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 <button class="btn" id="salta" aria-label="Salta">SALTA</button>
 <button class="btn" id="spingi" aria-label="Spingi">SPINGI</button>
 <button class="btn" id="prendi" aria-label="Prendi">PRENDI</button>
-<div id="over"><div><h1>La spesa della nonna</h1><p id="overTxt">Ogni partita il supermercato è disposto in modo diverso. Trova quello che c'è nella lista e vai alla cassa prima che chiuda. Frutta e verdura vanno pesate: prenota la bilancia e ricorda il codice scritto sulla cassetta.</p><p><b id="cta">Tocca PRENDI per iniziare</b></p></div></div>
+<div id="over"><div><h1>La spesa della nonna</h1><p id="overTxt">Ogni partita il supermercato è disposto in modo diverso. Trova quello che c'è nella lista e vai alla cassa prima che chiuda. Frutta e verdura vanno pesate: prenota la bilancia e ricorda il codice scritto sulla cassetta.</p><p id="choice" hidden><button data-c="0">🧺 CESTINO<br><small>veloce · max 4</small></button><button data-c="1">🛒 CARRELLO<br><small>lento · non salta</small></button></p><p><b id="cta">Tocca PRENDI per iniziare</b></p></div></div>
 <script>
 // ===================================================================================
 // GRIGLIA ISOMETRICA. Una casella = rombo 116x60 px. i scende verso destra, j verso sinistra.
@@ -104,9 +105,19 @@ const LEVELS=[
  {fresh:2,pack:2,meat:0,time:110,npc:3,txt:"Due verdure da pesare: puoi metterle nel sacchetto e pesarle una dopo l'altra."},
  {fresh:2,pack:1,meat:1,time:120,npc:3,txt:"NOVITÀ: la MACELLERIA! Prendi il numeretto al distributore e aspetta il tuo turno: se lo perdi, torni in fondo alla coda."},
  {fresh:3,pack:1,meat:1,time:120,npc:4,txt:"Spesa completa: verdura, carne e confezionati."},
+ {fresh:3,pack:2,meat:1,time:135,npc:4,phone:1,txt:"NOVITÀ: il TELEFONO! A metà spesa chiama il nipote e cambia la lista: guarda cosa aggiunge o toglie."},
+ {fresh:3,pack:2,meat:1,time:130,npc:4,phone:1,txt:"Occhio al telefono: la lista può cambiare in qualsiasi momento."},
+ {fresh:2,pack:2,meat:1,time:135,npc:4,phone:1,tills:1,txt:"NOVITÀ: le CASSE hanno la fila! La cassa veloce prende al massimo 5 pezzi. Se ti muovi esci dalla fila."},
+ {fresh:3,pack:2,meat:1,time:135,npc:4,phone:1,tills:1,txt:"Con 6 pezzi la cassa veloce non ti prende: scegli la fila giusta."},
+ {fresh:3,pack:2,meat:1,time:140,npc:4,phone:1,tills:1,wet:2,txt:"NOVITÀ: PAVIMENTO BAGNATO! Dove c'è il cartello giallo si scivola: SALTA la pozzanghera o girale intorno."},
+ {fresh:3,pack:2,meat:1,time:135,npc:4,phone:1,tills:1,wet:2,txt:"Pozzanghere, telefono e file alle casse: tutto insieme."},
+ {fresh:3,pack:3,meat:1,time:150,npc:4,phone:1,tills:1,wet:2,cart:1,txt:"NOVITÀ: CESTINO o CARRELLO? Il cestino è veloce ma tiene 4 cose (poi il carrello lo prendi all'ingresso). Il carrello tiene tutto ma è lento e non salta."},
+ {fresh:3,pack:3,meat:1,time:145,npc:4,phone:1,tills:1,wet:2,cart:1,txt:"Sette cose in lista: cestino o carrello?"},
+ {fresh:3,pack:3,meat:1,time:150,npc:4,phone:1,tills:1,wet:2,cart:1,out:1,txt:"NOVITÀ: PRODOTTO ESAURITO! Se lo scaffale è vuoto aspetta il rifornimento o prendi il prodotto che ti suggerisce la lista."},
+ {fresh:3,pack:3,meat:1,time:145,npc:4,phone:1,tills:1,wet:2,cart:1,out:1,txt:"Il supermercato completo. Forza, nonna!"},
 ];
-// dopo l'ultimo: come l'ultimo, un confezionato in più e 5 secondi in meno a livello (minimo 90)
-const lv=n=>n<LEVELS.length?LEVELS[n]:{...LEVELS.at(-1),pack:2,time:Math.max(90,120-5*(n-LEVELS.length+1)),txt:'Il supermercato chiude sempre prima!'};
+// dopo l'ultimo: come l'ultimo, 5 secondi in meno a livello (minimo 100)
+const lv=n=>n<LEVELS.length?LEVELS[n]:{...LEVELS.at(-1),time:Math.max(100,145-5*(n-LEVELS.length+1)),txt:'Il supermercato chiude sempre prima!'};
 let LV=0;try{LV=+(localStorage.getItem('nonna-lv')||0)}catch{}
 {const h=location.hash.match(/lv=(\d+)/);if(h)LV=Math.max(0,h[1]-1)} // #lv=5 apre il livello 5 (per provare)
 const saveLV=()=>{try{localStorage.setItem('nonna-lv',LV)}catch{}};
@@ -172,7 +183,7 @@ const VAR=c=>Object.keys(KJ).filter(k=>k.startsWith('p:'+c+':')); // tutte le ma
 const anchor=(m,fv,du=0)=>m.ax==='i'?iso(m.i+du,m.j+fv):iso(m.i+fv,m.j+du);
 function spr(c,n,x,y,mir,s=1){const k=KJ[n],[sx,sy,sw,sh]=k.r,ax=k.ax??sw/2,ay=k.ay??sh;c.save();c.translate(x,y);if(mir)c.scale(-1,1);c.imageSmoothingEnabled=true;c.drawImage(kit,sx,sy,sw,sh,-ax*s,-ay*s,sw*s,sh*s);c.restore()}
 // riempie i ripiani di un pezzo con la confezione della categoria, una accanto all'altra
-function fill(c,m,piece,du,cat,rows){const k=KJ[piece],[x0,y0]=anchor(m,FV[piece],du),mir=m.ax==='j',len=k.L*58,B=k.boards,V=VAR(cat);
+function fill(c,m,piece,du,cat,rows){if(m.empty)return;const k=KJ[piece],[x0,y0]=anchor(m,FV[piece],du),mir=m.ax==='j',len=k.L*58,B=k.boards,V=VAR(cat);
   // ogni ripiano: confezioni grandi quanto lo spazio libero, più file in profondità, impilate se basse, marche a blocchi
   B.forEach((hb,i)=>{const gap=(i?B[i-1]-hb:B[0]-B[1])-7;
     for(const d of rows)for(const [t0,t1] of k.spans){let x=t0*len,v,left=0;
@@ -180,7 +191,7 @@ function fill(c,m,piece,du,cat,rows){const k=KJ[piece],[x0,y0]=anchor(m,FV[piece
         if(x+pw>t1*len+1)break;const cx=x+pw/2;
         for(let q=0;q<stack;q++){const lx=cx+d*58,ly=cx*30/58-hb-d*30-q*ph*.9;spr(c,v,x0+(mir?-lx:lx),y0+ly,false,s)}x+=pw*.92}}})}
 // mucchio di confezioni su un piano (bancale, cesta): righe dal fondo in avanti, h = altezza del piano
-function heap(c,m,fv,du,cat,us,vs,h,s,layers){const [ax,ay]=anchor(m,fv,du),mir=m.ax==='j',V=VAR(cat),pts=[];
+function heap(c,m,fv,du,cat,us,vs,h,s,layers){if(m.empty)return;const [ax,ay]=anchor(m,fv,du),mir=m.ax==='j',V=VAR(cat),pts=[];
   for(const v of vs)for(const u of us)pts.push([u,v]);pts.sort((p,q)=>p[0]-p[1]-(q[0]-q[1]));
   for(let q=0;q<layers;q++)for(const [u,v] of pts){const id=V[ri(V.length)],ph=KJ[id].r[3]*s,lx=u*58+v*58,ly=u*30-v*30-h-q*ph*.85;spr(c,id,ax+(mir?-lx:lx),ay+ly,false,s)}}
 function skewText(c,t,x,y,mir,size,col){c.save();c.translate(x,y);c.transform(1,(mir?-1:1)*30/58,0,1,0,0);c.font='700 '+size+'px "Pixelify Sans",monospace';c.textAlign='center';c.textBaseline='middle';c.lineWidth=size/5;c.strokeStyle='rgba(0,0,0,.6)';c.strokeText(t,0,0);c.fillStyle=col;c.fillText(t,0,0);c.restore()}
@@ -193,7 +204,7 @@ const KIT={
   frigo(c,m){for(let u=0;u<m.L;u+=2){const [x,y]=anchor(m,FV.frigo,u);spr(c,'frigo',x,y,m.ax==='j');fill(c,m,'frigo',u,m.cat,[.52,.34]);spr(c,'frigo:vetro',x,y,m.ax==='j')}
     const [sx,sy]=m.ax==='i'?iso(m.i+m.L/2,m.j+.5,290):iso(m.i+.5,m.j+m.L/2,290);sign(c,sx,sy,m.cat);m.labelH=230},
   pane(c,m){const [x,y]=anchor(m,FV.pane),mir=m.ax==='j';spr(c,'pane',x,y,mir);
-    const V=VAR('PANE');for(const hb of [66,24])for(const dv of [.7,.5,.3])for(let t=6+ri(10);t<m.L*58-16;){const id=V[ri(V.length)],sc=.5,w=KJ[id].r[2]*sc;const cx=t+w/2,lx=cx+dv*58,ly=cx*30/58-hb-dv*30;spr(c,id,x+(mir?-lx:lx),y+ly,false,sc);t+=w*.7}
+    const V=m.empty?[]:VAR('PANE');for(const hb of [66,24])for(const dv of [.7,.5,.3])for(let t=6+ri(10);t<m.L*58-16&&V.length;){const id=V[ri(V.length)],sc=.5,w=KJ[id].r[2]*sc;const cx=t+w/2,lx=cx+dv*58,ly=cx*30/58-hb-dv*30;spr(c,id,x+(mir?-lx:lx),y+ly,false,sc);t+=w*.7}
     spr(c,'pane:vetro',x,y,mir);const [sx,sy]=m.ax==='i'?iso(m.i+1,m.j+.5,200):iso(m.i+.5,m.j+1,200);sign(c,sx,sy,'PANE');m.labelH=150},
   frutta(c,m){const mir=m.ax==='j';m.items.forEach((n,k)=>{crates(c,m,k,2);const [ax,ay]=anchor(m,1,k),big=['INSALATA','CAVOLI','BROCCOLI'].includes(n);
     // mucchio: tante copie del frutto sulla cassetta di sopra, dal fondo in avanti, più alto al centro
@@ -266,7 +277,7 @@ function newLevel(){
   OX=MARG+C*T;OY=WALLH+170;BW=OX+R*T+MARG;BH=OY+(R+C)*U+90;
   tryCoords();buildStage();buildNav()}
 function tryCoords(){ // il generatore lavora in caselle: qui converto casse e bilancia in pixel
-  CASSE=MODS.filter(m=>m.type==='cassa').map(m=>iso(m.i+1.5,m.j+2.6));
+  CASSE=MODS.filter(m=>m.type==='cassa').map(m=>{const slots=[];for(let k=0;k<5;k++){const p=iso(m.i+1.5-k,m.j+2.6);if(!walkable(...p))break;slots.push(p)}if(!slots.length)slots.push(iso(m.i+1.5,m.j+2.6));return{m,slots,q:[],t:0}});
   {const m=MODS.find(m=>m.type==='macelleria');MAC=m&&{m,stand:iso(m.i+2.45,m.j+1.5),disp:iso(m.i+2.3,m.j+3.5),but:iso(m.i+.6,m.j+1.6)}}
   const s=MODS.find(m=>m.type==='bilancia');SCALE=s&&{x:iso(s.i+.5,s.j+.5)[0],y:iso(s.i+.5,s.j+.5)[1]};SCALE_STAND=s&&iso(s.i+.5,s.j+1.6);
   SPOTS=[];for(const m of MODS){if(!m.cat&&!m.items)continue;
@@ -286,10 +297,16 @@ function buildStage(){
   // b sta dietro ad a se è separato verso il fondo; se sono in diagonale (dietro su un asse, davanti sull'altro) decide la profondità del centro
   const sep=(b,a)=>b.i+b.w<=a.i||b.j+b.d<=a.j,depth=m=>m.i+m.w/2+m.j+m.d/2,behind=(b,a)=>sep(b,a)&&(!sep(a,b)||depth(b)<depth(a)),left=[...MODS],order=[];
   while(left.length){const k=left.findIndex(a=>!left.some(b=>b!==a&&behind(b,a)));order.push(...left.splice(Math.max(0,k),1))}
+  BASE=document.createElement('canvas');BASE.width=BW;BASE.height=BH;BASE.getContext('2d').drawImage(STAGE,0,0);ORDER=order;
   for(const m of order){const cs=[[m.i,m.j],[m.i+m.w,m.j],[m.i,m.j+m.d],[m.i+m.w,m.j+m.d]].flatMap(([a,b])=>[iso(a,b),iso(a,b,TALL[m.type])]);
     m.bx=Math.floor(Math.min(...cs.map(p=>p[0]))-140);m.by=Math.floor(Math.min(...cs.map(p=>p[1]))-40);
     m.cv=document.createElement('canvas');m.cv.width=Math.ceil(Math.max(...cs.map(p=>p[0]))+140-m.bx);m.cv.height=Math.ceil(Math.max(...cs.map(p=>p[1]))+20-m.by);
     const c=m.cv.getContext('2d');c.translate(-m.bx,-m.by);KIT[m.type](c,m);s.drawImage(m.cv,m.bx,m.by)}}
+let BASE,ORDER=[];
+function redraw(m){const c=m.cv.getContext('2d');c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,m.cv.width,m.cv.height);c.translate(-m.bx,-m.by);KIT[m.type](c,m)}
+function compose(){const s=STAGE.getContext('2d');s.drawImage(BASE,0,0);for(const m of ORDER)s.drawImage(m.cv,m.bx,m.by)}
+// esaurito: i mobili di quel prodotto restano vuoti finché il magazziniere non rifornisce
+function stock(){for(const m of MODS){const e=!!(OUT&&OUT.t>0&&m.cat===OUT.n);if(!!m.empty!==e){m.empty=e;redraw(m)}}compose()}
 
 // ---------- rete di percorsi per i clienti
 function buildNav(){NODES=[];ADJ=[];const id={}; // un nodo al centro di ogni casella libera, collegato alle caselle libere accanto
@@ -315,7 +332,7 @@ let AC;function beep(f,d=.08,t='square'){try{AC=AC||new AudioContext();const o=A
 const CAST=[{who:'baffi',cart:true,speed:150,extras:['think','grab']},{who:'mamma',cart:true,speed:135,extras:['list','point','scold']},
   {who:'anziano',cart:false,speed:105,extras:['look','put','hat','cane']},{who:'ragazzo',cart:false,speed:240,extras:['grab','sorry','skid']}];
 let CASH=[]; // cassieri: stanno fermi dietro il banco e cambiano posa
-let G,NPC=[],READY=false,CODE={};
+let G,NPC=[],READY=false,CODE={},WET=[],OUT=null,CHOICE=0;
 // FILA ALLA BILANCIA: QUEUE[0] è chiamato. Se c'è qualcuno dietro ha WINDOW secondi per presentarsi, poi perde il posto.
 const WINDOW=5,NAME={nonna:'TU',baffi:'Signore',mamma:'Mamma',anziano:'Nonno',ragazzo:'Ragazzo'};let QUEUE=[],QT=WINDOW;
 function book(a){if(!QUEUE.includes(a)){QUEUE.push(a);if(QUEUE.length===1)QT=WINDOW}}
@@ -359,19 +376,52 @@ function start(keepLevel){
   const far=shuffle(NODES.map((p,i)=>i).filter(i=>ADJ[i].length&&Math.hypot(NODES[i][0]-G.x,NODES[i][1]-G.y)>450));
   NPC=CAST.slice(0,lv(LV).npc).map((c,k)=>{const [x,y]=NODES[far[(k*7)%far.length]];return Object.assign(newActor(c.who,x,y),c,{rx:c.cart?52:24,ry:c.cart?24:12,path:[],pause:rnd(.2,2),stuck:0})});
   CASH=MODS.filter(m=>m.type==='cassa').map((m,k)=>{const [x,y]=iso(m.i+1.4,m.j+.5);return Object.assign(newActor('cassieri',x,y),{flip:true,base:k?'m_':'f_',pose:(k?'m_':'f_')+'idle',t:rnd(.5,2)})});
-  $('over').hidden=true;$('lvl').textContent='LV '+(LV+1)+' · LISTA';drawList()}
-function drawList(){$('list').innerHTML=G.list.map(e=>`<li class="${e.got?'got':G.bag.includes(e.n)?'hand':''}">${e.n}${FRESH.has(e.n)&&!e.got?' <small>⚖</small>':''}${e.n==='CARNE'&&!e.got?' <small>🎫</small>':''}</li>`).join('')}
+  const L=lv(LV),f=ri(CASSE.length);CASSE.forEach((c,k)=>{c.q=[];c.fast=!!L.tills&&k===f;c.rate=c.fast?2.5:4.5;c.t=c.rate;if(L.tills)for(let n=c.fast?2+ri(3):ri(3);n--;)addQ(c)});
+  G.phoneAt=L.phone?L.time*rnd(.45,.75):-1; // il nipote chiama quando il tempo rimasto scende sotto questa soglia
+  WET=[];for(let k=0;k<(L.wet||0);k++)WET.push(wetSpot(WET));
+  OUT=null;if(L.out){const c=G.list.filter(e=>!FRESH.has(e.n)&&e.n!=='CARNE'&&MODS.some(m=>m.cat===e.n)),alts=[...new Set(SPOTS.map(s=>s.n))].filter(n=>!FRESH.has(n)&&!G.list.some(e=>e.n===n));
+    if(c.length&&alts.length){const e=c[ri(c.length)];e.alt=alts[ri(alts.length)];OUT={n:e.n,t:rnd(35,50)}}}
+  stock();
+  G.cart=!!L.cart&&CHOICE===1;if(G.cart){G.rx=50;G.ry=20}
+  $('over').hidden=true;drawList()}
+// fila alla cassa: un cliente in più in coda (i clienti in fila sono comparse ferme, non girano)
+function addQ(c){if(c.q.length>=c.slots.length)return;const w=CAST[ri(CAST.length)];c.q.push(Object.assign(newActor(w.who,...c.slots[c.q.length]),{cart:w.cart}))}
+function updateTills(dt){for(const c of CASSE){
+  c.q.forEach((a,k)=>{const [x,y]=c.slots[Math.min(k,c.slots.length-1)],dx=x-a.x,dy=y-a.y,d=Math.hypot(dx,dy);a.front=true;a.flip=false;if(d>3){const v=Math.min(d,200*dt);a.x+=dx/d*v;a.y+=dy/d*v;a.moving=true;a.walk+=dt*6}else a.moving=false});
+  if(c.q[0]===G)return winGame();
+  if(c.q.length&&(c.t-=dt)<=0){c.q.shift();c.t=c.rate}
+  if(lv(LV).tills&&Math.random()<dt/(c.rate*1.4))addQ(c)}}
+function winGame(){end(true);[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.12),i*120))}
+// pozzanghera: in corsia, lontana da ingresso, casse, bilancia, macelleria e dalle altre pozzanghere
+function wetSpot(others){for(let t=0;t<60;t++){const i=ri(NODES.length);if(!ADJ[i].length)continue;const [x,y]=NODES[i],far=p=>Math.hypot(x-p[0],y-p[1])>260;
+  if(far(iso(...START))&&CASSE.every(c=>far(c.slots[0]))&&(!SCALE||far(SCALE_STAND))&&(!MAC||far(MAC.stand))&&others.every(w=>far([w.x,w.y])))return{x,y,t:rnd(15,22)}}return{x:-1e4,y:-1e4,t:5}}
+function drawSign(x,y){poly(ctx,[[x-16,y],[x+16,y],[x+8,y-58],[x-8,y-58]],'#f4d020','#3a2a10',3);ctx.font='700 30px "Pixelify Sans",monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#3a2a10';ctx.fillText('!',x,y-28)}
+// ponytail: carrello disegnato a mano finché non c'è lo sprite della nonna col carrello
+function drawCart(a){const d=a.flip?-1:1,x=a.x+d*56,y=a.y;ctx.lineWidth=4;ctx.strokeStyle='#4a525e';
+  poly(ctx,[[x-d*38,y-82],[x+d*38,y-82],[x+d*30,y-30],[x-d*30,y-30]],'rgba(205,214,224,.6)','#4a525e',4);
+  ctx.beginPath();for(let k=-2;k<=2;k++){ctx.moveTo(x+d*k*14,y-82);ctx.lineTo(x+d*k*11,y-30)}ctx.moveTo(x-d*38,y-82);ctx.lineTo(x-d*56,y-98);ctx.stroke();
+  ctx.fillStyle='#2a2430';for(const k of [-22,22]){ctx.beginPath();ctx.arc(x+d*k,y-12,7,0,7);ctx.fill()}}
+// telefonata del nipote: toglie una cosa non ancora presa oppure ne aggiunge una (+10 s)
+function phone(){const inL=new Set(G.list.flatMap(e=>[e.n,e.alt])),add=[...new Set(SPOTS.map(s=>s.n))].filter(n=>!inL.has(n)&&(SCALE||!FRESH.has(n))),
+  drop=G.list.filter(e=>!e.got&&!G.bag.includes(e.n)&&e.n!=='CARNE'&&!e.alt);
+  [0,220,440,660].forEach(t=>setTimeout(()=>beep(1320,.07),t));act(G,'idle',2.5);
+  if(drop.length&&(Math.random()<.4||!add.length)){const e=drop[ri(drop.length)];G.list.splice(G.list.indexOf(e),1);say('📞 Il nipote: «Nonna, lascia stare '+e.n+'!»',3.5);checkDone()}
+  else if(add.length){const n=add[ri(add.length)];G.list.push({n,got:false,nu:true});G.time+=10;say('📞 Il nipote: «Nonna, prendi anche '+n+'!» +10s',3.5)}
+  drawList()}
+const load=()=>G.list.filter(e=>e.got).length+G.bag.length; // pezzi nel cestino
+function drawList(){$('lvl').textContent='LV '+(LV+1)+' · LISTA'+(lv(LV).cart?G.cart?' · 🛒':' · 🧺 '+load()+'/4':'');
+  $('list').innerHTML=G.list.map(e=>`<li class="${e.got?'got':G.bag.includes(e.n)?'hand':''}${e.nu?' nu':''}">${e.n}${e.alt&&e.seen&&!e.got?' <small>o '+e.alt+'</small>':''}${FRESH.has(e.n)&&!e.got?' <small>⚖</small>':''}${e.n==='CARNE'&&!e.got?' <small>🎫</small>':''}</li>`).join('')}
 function say(t,d=1.6){G.msgT=d;$('msg').textContent=t;$('msg').hidden=false}
 function intro(){const L=lv(LV),o=$('over');o.querySelector('h1').textContent='Livello '+(LV+1);
-  $('overTxt').textContent=L.txt+' Hai '+L.time+' secondi.';$('cta').textContent='Tocca PRENDI per iniziare'}
-function end(win){$('bil').hidden=true;G.weighing=false;G.state=win?'win':'lose';G.pose=win?'win':'lose';G.poseT=1e9;$('over').hidden=false;$('over').querySelector('h1').textContent=win?'Livello '+(LV+1)+' superato!':'Il supermercato chiude!';$('cta').textContent=win?'Tocca PRENDI per il livello '+(LV+2):'Tocca PRENDI per riprovare il livello '+(LV+1);if(win){LV++;saveLV()}
+  $('overTxt').textContent=L.txt+' Hai '+L.time+' secondi.';$('choice').hidden=!L.cart;$('cta').textContent=L.cart?'Scegli: cestino o carrello':'Tocca PRENDI per iniziare'}
+function end(win){$('bil').hidden=true;$('choice').hidden=true;G.weighing=false;G.state=win?'win':'lose';G.pose=win?'win':'lose';G.poseT=1e9;$('over').hidden=false;$('over').querySelector('h1').textContent=win?'Livello '+(LV+1)+' superato!':'Il supermercato chiude!';$('cta').textContent=win?'Tocca PRENDI per il livello '+(LV+2):'Tocca PRENDI per riprovare il livello '+(LV+1);if(win){LV++;saveLV()}
   $('overTxt').textContent=win?`Ce l'hai fatta con ${Math.ceil(G.time)} secondi di anticipo.`:`Ti mancavano: ${G.list.filter(e=>!e.got).map(e=>e.n.toLowerCase()).join(', ')}.`}
 const nearScale=(r=110)=>!!SCALE&&Math.hypot(G.x-SCALE_STAND[0],(G.y-SCALE_STAND[1])*1.3)<r;
 function target(){const [gi,gj]=toTile(G.x,G.y);let best=null,bd=1.25;for(const s of SPOTS){const d=Math.hypot(s.i-gi,s.j-gj);if(d<bd){bd=d;best=s}}return best}
 function pick(){
   if(!READY)return;
   if(!G||G.state!=='play'){if(G&&G.state!=='title'){start(false);G.state='title';$('over').hidden=false;intro();return}start(true);return}
-  if(G.weighing||G.serving)return;
+  if(G.weighing||G.serving||G.till||G.slipT>0)return;
   if(nearMac('disp')&&!MQ.includes(G)){if(!needMeat())return say('La carne non è nella lista');takeTicket(G);act(G,'reach',.4);say('Hai preso il numero '+pad2(G.ticket));return beep(900,.06)}
   if(MQ.includes(G)&&nearMac('stand',140)){if(MQ[0]!==G){say('Hai il '+pad2(G.ticket)+': ora servono il '+pad2(MQ[0].ticket));return beep(180,.15,'sawtooth')}
     G.serving=true;G.serveT=G.serveMax=SERVE;return beep(700,.06)}
@@ -382,12 +432,14 @@ function pick(){
     say('Non è il tuo turno: sei '+(QUEUE.indexOf(G)+1)+'ª in fila');return beep(180,.15,'sawtooth')}
   const s=target();
   if(!s){if(G.bag.length)say('Hai verdura da pesare: prenota la bilancia!');return}
-  const e=G.list.find(e=>e.n===s.n);
+  if(OUT&&OUT.t>0&&s.n===OUT.n){const e=G.list.find(e=>e.n===s.n);if(e&&!e.got&&e.alt){e.seen=true;drawList();return say(s.n+' esaurito! Rifornimento tra '+Math.ceil(OUT.t)+'s… oppure prendi '+e.alt,2.8)}return say(s.n+' esaurito')}
+  const e=G.list.find(e=>e.n===s.n)||G.list.find(e=>e.alt===s.n&&e.seen&&!e.got);
+  if(e&&!e.got&&!G.bag.includes(e.n)&&lv(LV).cart&&!G.cart&&load()>=4)return say('Cestino pieno! Il carrello lo prendi all\'ingresso',2.4);
   if(!e){G.time-=5;act(G,'lose',.7);say('Non è in lista! -5s');return beep(150,.2,'sawtooth')}
   if(e.got)return say('Già nel cestino');
   if(G.bag.includes(e.n))return say('Ce l\'hai già nel sacchetto: va pesata');
   if(FRESH.has(e.n)){G.bag.push(e.n);act(G,'bend',.45);drawList();say(e.n+' nel sacchetto · codice '+CODE[e.n]);return beep(700,.06)}
-  e.got=true;act(G,G.front?'box':'reach',.5);drawList();say(e.n+' nel cestino!');beep(880);setTimeout(()=>beep(1175),70);checkDone()}
+  e.got=true;act(G,G.front?'box':'reach',.5);drawList();say(s.n+(G.cart?' nel carrello!':' nel cestino!'));beep(880);setTimeout(()=>beep(1175),70);checkDone()}
 function act(a,p,t){a.pose=p;a.poseT=t}
 // SPINGI: chi è vicino alla nonna viene allontanato e protesta; poi 5 secondi di ricarica
 const SHOVE_CD=5,SHOVE_R=230,MAD={baffi:'grab',mamma:'scold',anziano:'cane',ragazzo:'trip'};
@@ -396,7 +448,7 @@ function shove(){if(!G||G.state!=='play'||G.shoveT>0||G.weighing||G.serving)retu
     const k=1/(Math.hypot(dx,dy)||1);n.push={vx:dx*k*650,vy:dy*k*420,t:.3};n.path=[];n.pause=rnd(1.2,2);n.pose=MAD[n.who];n.front=true;n.flip=dx>0}
   say(hit?'Permesso, permesso!':'Permesso!… ma non c\'è nessuno',1.2);beep(hit?260:200,.1,'square')}
 function checkDone(){if(G.list.every(e=>e.got))setTimeout(()=>G.state==='play'&&say('Ora vai alla cassa!'),1200)}
-function jump(){if(!G||G.state!=='play'||G.z>0||G.weighing||G.serving)return;G.vz=520;G.z=1;beep(520,.07)}
+function jump(){if(!G||G.state!=='play'||G.z>0||G.weighing||G.serving||G.till||G.slipT>0)return;if(G.cart)return say('Col carrello non si salta!');G.vz=520;G.z=1;beep(520,.07)}
 
 // ---------- comandi
 const stick=$('stick'),knob=$('knob');let sv=[0,0],sid=null;
@@ -405,6 +457,7 @@ stick.addEventListener('pointerdown',e=>{sid=e.pointerId;stick.setPointerCapture
 stick.addEventListener('pointermove',e=>{if(e.pointerId===sid)stickAt(e)});
 const se=e=>{if(e.pointerId===sid){sid=null;sv=[0,0];knob.style.transform=''}};stick.addEventListener('pointerup',se);stick.addEventListener('pointercancel',se);
 $('prendi').addEventListener('pointerdown',e=>{e.preventDefault();pick()});$('salta').addEventListener('pointerdown',e=>{e.preventDefault();jump()});$('spingi').addEventListener('pointerdown',e=>{e.preventDefault();shove()});
+$('choice').addEventListener('pointerdown',e=>{const b=e.target.closest('button');if(b)CHOICE=+b.dataset.c}); // poi il tocco arriva a #over e parte la partita
 $('over').addEventListener('pointerdown',()=>pick());
 const keys={},KD={ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1],ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0]};
 addEventListener('keydown',e=>{if(G&&G.weighing){if(/^\d$/.test(e.key))key(e.key);else if(e.key==='Enter')key('OK');else if(e.key==='Backspace')key('C');else if(e.key==='Escape')closeBil();return}keys[e.code]=true;if(e.repeat)return;if(e.code==='Space'){e.preventDefault();jump()}if(e.code==='KeyE'||e.code==='Enter')pick();if(e.code==='KeyQ')shove()});
@@ -487,13 +540,26 @@ function update(dt){
   $('spingi').textContent=G.shoveT>0?Math.ceil(G.shoveT)+'s':'SPINGI';$('spingi').classList.toggle('on',!(G.shoveT>0));
   if(G.weighing){G.front=false;updBil(dt)}
   else if(G.serving){G.front=false;if((G.serveT-=dt)<=0){G.serving=false;leaveMac(G);const e=G.list.find(e=>e.n==='CARNE');if(e)e.got=true;act(G,'box',.6);drawList();say('Carne nel cestino!');beep(880);setTimeout(()=>beep(1175),70);checkDone()}}
+  else if(G.slipT>0)G.slipT-=dt;
+  else if(G.till){if(Math.hypot(...inputVec())>.5){const q=G.till.q;q.splice(q.indexOf(G),1);G.till=null;G.tillCD=1.5;say('Hai lasciato la fila')}}
   else{const [vx,vy]=inputVec(),m=Math.hypot(vx,vy);
-    if(m>.12){const sp=380*dt,nx=G.x+vx*sp,ny=G.y+vy*sp*.75;face(G,vx,vy);
+    if(m>.12){const sp=(G.cart?270:380)*dt,nx=G.x+vx*sp,ny=G.y+vy*sp*.75;face(G,vx,vy);
       if(walkable(nx,G.y)&&!hits(G,nx,G.y))G.x=nx;if(walkable(G.x,ny)&&!hits(G,G.x,ny))G.y=ny;G.walk+=dt*9;G.moving=true}}
   if(G.z>0){G.vz-=2200*dt;G.z+=G.vz*dt;if(G.z<=0){G.z=0;G.vz=0}}
-  if(CASSE.some(([x,y])=>Math.hypot(G.x-x,(G.y-y)*1.4)<150)){
-    if(G.list.every(e=>e.got)){end(true);[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.12),i*120))}
-    else if(G.bag.length&&G.msgT<=0)say('La cassiera: «Signora, la frutta va pesata!»')}
+  if(G.tillCD>0)G.tillCD-=dt;
+  // cassa: ti metti in fondo alla fila; quando sei prima hai finito
+  if(!G.till&&!(G.tillCD>0))for(const c of CASSE){const [x,y]=c.slots[Math.min(c.q.length,c.slots.length-1)];if(Math.hypot(G.x-x,(G.y-y)*1.4)>150)continue;
+    if(!G.list.every(e=>e.got)){if(G.bag.length&&G.msgT<=0)say('La cassiera: «Signora, la frutta va pesata!»');continue}
+    if(c.fast&&G.list.length>5){if(G.msgT<=0)say('Cassa veloce: massimo 5 pezzi!');continue}
+    if(c.q.length>=c.slots.length){if(G.msgT<=0)say('Fila troppo lunga: prova l\'altra cassa');continue}
+    c.q.push(G);G.till=c;if(c.q.length>1)say('In fila: '+(c.q.length-1)+' davanti a te');break}
+  updateTills(dt);if(G.state!=='play')return;
+  if(G.slipCD>0)G.slipCD-=dt;
+  if(G.moving&&!(G.z>0)&&!(G.slipCD>0)&&WET.some(w=>((G.x-w.x)/70)**2+((G.y-w.y)/34)**2<1)){G.slipT=1.3;G.slipCD=3;act(G,'lose',1.3);say('Scivolone! Le pozzanghere si saltano',1.8);beep(140,.3,'sawtooth')}
+  for(const w of WET)if((w.t-=dt)<=0)Object.assign(w,wetSpot(WET.filter(o=>o!==w))); // l'addetto asciuga e bagna altrove
+  if(lv(LV).cart&&!G.cart&&load()>=4&&Math.hypot(G.x-iso(...START)[0],G.y-iso(...START)[1])<150){G.cart=true;G.rx=50;G.ry=20;drawList();say('Preso il carrello!');beep(600,.08)}
+  if(G.phoneAt>0&&G.time<G.phoneAt){G.phoneAt=-1;phone()}
+  if(OUT&&OUT.t>0&&(OUT.t-=dt)<=0){stock();const e=G.list.find(e=>e.n===OUT.n);if(e&&!e.got)say(OUT.n+' rifornito!',2)}
   const t=Math.ceil(G.time);$('time').textContent=Math.floor(t/60)+':'+String(t%60).padStart(2,'0');$('time').style.color=t<=10?'#ffd040':'#ff5040';
   const canWeigh=G.bag.length&&nearScale(),tk=!MQ.includes(G)&&needMeat()&&nearMac('disp'),ord=MQ[0]===G&&nearMac('stand',140)&&!G.serving;
   $('prendi').textContent=tk?'NUMERO':ord?'ORDINA':canWeigh?'PESA':'PRENDI';$('prendi').classList.toggle('on',!!(target()||canWeigh||tk||ord));
@@ -524,10 +590,11 @@ function render(now){
   const z=DEBUG?Math.min(W/BW,H/BH):Math.max(H/820,W/1750),vw=W/z,vh=H/z;
   const cx=Math.max(0,Math.min(BW-vw,fx-vw/2)),cy=Math.max(0,Math.min(BH-vh,fyy-120-vh/2));
   ctx.setTransform(z,0,0,z,-cx*z,-cy*z);ctx.drawImage(STAGE,0,0);ctx.imageSmoothingEnabled=false;
-  const actors=[...(G&&G.state!=='title'?[G,...NPC]:NPC),...CASH,...(BUT?[BUT]:[])].sort((p,q)=>p.y-q.y);
-  for(const a of actors){
+  for(const w of WET){ctx.fillStyle='rgba(120,190,255,.45)';ctx.beginPath();ctx.ellipse(w.x,w.y,70,34,0,0,7);ctx.fill();ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.ellipse(w.x-18,w.y-8,20,6,0,0,7);ctx.fill()}
+  const actors=[...(G&&G.state!=='title'?[G,...NPC]:NPC),...CASH,...(BUT?[BUT]:[]),...CASSE.flatMap(c=>c.q.filter(a=>a!==G)),...WET.map(w=>({sign:1,x:w.x+44,y:w.y-4}))].sort((p,q)=>p.y-q.y);
+  for(const a of actors){if(a.sign){drawSign(a.x,a.y);continue}
     if(a.who!=='cassieri'&&a.who!=='macellaio')shadow(a.x,a.y+2,a.cart?62:38,a.cart?18:11);
-    const [,,w,h,ax]=drawPerson(a),half=Math.max(ax,w-ax)+4;
+    const [,,w,h,ax]=drawPerson(a),half=Math.max(ax,w-ax)+4+(a===G&&G.cart?100:0);if(a===G&&G.cart)drawCart(a);
     occlude(a,a.x-half,a.x+half,a.y-(a.z||0)-h-4,a.y+8);
     if(a===G){ctx.globalAlpha=.4;drawPerson(a);ctx.globalAlpha=1} // la nonna dietro un mobile si vede in trasparenza
     if(a===G&&G.bag.length){const t=G.bag.length>1?G.bag.length+' DA PESARE':G.bag[0];ctx.font='700 28px "Pixelify Sans",monospace';ctx.textAlign='center';ctx.textBaseline='middle';const w=ctx.measureText(t).width+20;
@@ -537,6 +604,8 @@ function render(now){
     if(G.bag.length&&!nearScale()){const b=Math.sin(now/180)*8;tag(SCALE.x,SCALE.y-255+b,QUEUE[0]===G?'⚖ TOCCA A TE':'⚖ BILANCIA',QUEUE[0]===G?'#ffe6a0':'#a8e4b4')}
     const s=G.weighing||(G.bag.length&&nearScale())?null:target();if(s){const [x,y]=iso(s.i,s.j,s.m.labelH||150);tag(x,y,FRESH.has(s.n)?s.n+' · '+CODE[s.n]:s.n,FRESH.has(s.n)?'#a8e4b4':'#e8c878')}
     if(G.bag.length&&nearScale()&&!G.weighing){const me=QUEUE[0]===G,k=QUEUE.indexOf(G);tag(SCALE.x,SCALE.y-245,me?'PESA QUI':k>0?'SEI '+(k+1)+'ª':'PRENOTA',me?'#a8e4b4':'#f0c0a0')}}
+  if(G&&G.state==='play'){for(const c of CASSE)if(c.fast){const [x,y]=iso(c.m.i+1.5,c.m.j+1,0);tag(x,y-190,'⚡ MAX 5 PEZZI','#ffe6a0')}
+    if(OUT&&OUT.t>0)for(const m of MODS)if(m.cat===OUT.n){const [x,y]=iso(m.i+m.w/2,m.j+m.d/2,(m.labelH||150)+40),t=Math.ceil(OUT.t);tag(x,y,'ESAURITO '+Math.floor(t/60)+':'+String(t%60).padStart(2,'0'),'#f0a0a0')}}
   // display della macelleria: numero chiamato in rosso, lampeggia mentre scadono i 5 s
   if(MAC&&MAC.m.disp){const [x,y]=MAC.m.disp,h=MQ[0],blink=h&&!h.serving&&MQ.length>1&&(now/250|0)%2;skewText(ctx,pad2(h?h.ticket:LAST),x,y,true,34,blink?'#ffd040':'#ff3a2a')}
   if(G&&G.state==='play'&&MAC){const has=MQ.includes(G),b=Math.sin(now/180)*8;
