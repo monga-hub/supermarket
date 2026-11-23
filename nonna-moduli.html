@@ -1,0 +1,543 @@
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Nonna al Supermercato</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap">
+<style>
+/* Supermercato componibile: stanza a griglia isometrica, mobili a moduli, nuova disposizione a ogni partita */
+:root{--ink:#1c3a24;--paper:#f8f4e0;--mint:#a8e4b4;--gold:#e8c878;--red:#d83030;color-scheme:dark}
+html,body{height:100%;margin:0;background:#141018;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;font-family:"Pixelify Sans",ui-monospace,monospace}
+canvas{position:fixed;inset:0;width:100%;height:100%}
+#hud{position:fixed;left:calc(10px + env(safe-area-inset-left,0px));top:calc(10px + env(safe-area-inset-top,0px));background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:4px;padding:6px 12px 8px;box-shadow:4px 4px 0 rgba(0,0,0,.35);min-width:120px}
+#hud b{display:block;font-size:15px;color:var(--red);letter-spacing:.06em}
+#hud ul{list-style:none;margin:4px 0 0;padding:0;font-size:15px;line-height:1.35}
+#hud li::before{content:"□ "}#hud li.hand{color:#a0307a}#hud li.hand::before{content:"✋ "}#hud li small{font-size:11px;opacity:.7}#hud li.got{text-decoration:line-through;opacity:.45}#hud li.got::before{content:"■ "}
+#time{position:fixed;right:calc(10px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));background:#2a0c10;color:#ff5040;border:3px solid #1a1420;border-radius:4px;padding:2px 12px;font-size:28px;font-variant-numeric:tabular-nums;box-shadow:4px 4px 0 rgba(0,0,0,.35)}
+#msg{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--mint);color:var(--ink);border:3px solid var(--ink);border-radius:4px;padding:4px 14px;font-size:18px;font-weight:700}
+#over[hidden]{display:none}
+#over{position:fixed;inset:0;display:grid;place-items:center;background:rgba(10,8,16,.55)}
+#over div{background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:6px;padding:16px 22px;max-width:min(86vw,380px);text-align:center;box-shadow:6px 6px 0 rgba(0,0,0,.4)}
+#over h1{margin:0 0 6px;font-size:26px;color:var(--red);text-wrap:balance}#over p{margin:6px 0;font-size:16px;line-height:1.35}
+#stick{position:fixed;left:calc(22px + env(safe-area-inset-left,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));width:124px;height:124px;border-radius:50%;background:rgba(20,30,24,.35);border:3px solid rgba(248,244,224,.7)}
+#knob{position:absolute;left:35px;top:35px;width:54px;height:54px;border-radius:50%;background:var(--paper);border:3px solid var(--ink);box-sizing:border-box;pointer-events:none}
+.btn{position:fixed;border-radius:50%;border:3px solid var(--ink);font:700 15px "Pixelify Sans",monospace;display:grid;place-items:center;padding:0;box-shadow:inset 0 -5px 0 rgba(0,0,0,.2),3px 3px 0 rgba(0,0,0,.35)}
+.btn:active{transform:scale(.94)}.btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+#prendi{right:calc(22px + env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));width:98px;height:98px;background:#b8c8b0;color:var(--ink);opacity:.75}
+#prendi.on{background:var(--gold);opacity:1}
+#spingi{right:calc(132px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:72px;height:72px;background:#b8a0a0;color:#3a1010;opacity:.6;font-size:13px}
+#spingi.on{background:#f0a070;opacity:1}
+#time{z-index:5}
+#dx{position:fixed;right:calc(10px + env(safe-area-inset-right,0px));top:calc(64px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;align-items:stretch;gap:6px}
+#coda,#turno,#mturno,#mcoda{background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:4px;padding:4px 10px 6px;box-shadow:4px 4px 0 rgba(0,0,0,.35);font-size:13px;min-width:120px}
+.fila b{color:#2a7a40}.fila ol{margin:2px 0 5px;padding:0 0 0 18px;line-height:1.35}.fila li.me{color:#a0307a;font-weight:700}.fila li.call{background:#ffe6a0}.fila li.none{list-style:none;margin-left:-18px;opacity:.6}
+#mcoda b{color:#a02020}#mturno{font-weight:700;font-size:14px}#mturno.red{color:#c02020;background:#ffe0d8}#mturno.go{background:#d8f4dc}
+#prenota{display:block;width:100%;min-height:34px;font:700 14px "Pixelify Sans",monospace;border:2px solid var(--ink);border-radius:4px;background:var(--mint);color:var(--ink)}#prenota:disabled{opacity:.5}
+/* orologio del turno: bianco in attesa, verde quando tocca a te, rosso che si svuota nei 5s per presentarti */
+#oro{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;min-height:34px}#oro[hidden],#prenota[hidden]{display:none}
+#oro i{flex:none;width:30px;height:30px;border-radius:50%;border:3px solid var(--ink);background:conic-gradient(var(--c,#fff) calc(var(--p,0)*1turn),#fff 0);position:relative}
+#oro i::after{content:'';position:absolute;left:50%;top:3px;width:2px;height:10px;margin-left:-1px;background:var(--ink)}
+#oro.go{--c:#5ac070}#oro.red{--c:#e03030;color:#c02020}#oro.red i{animation:pul .5s infinite alternate}@keyframes pul{to{transform:scale(1.15)}}
+/* schermata bilancia (pezzi da kit/bil-pezzi.jpg con tools/bil.py): a destra il cesto da pesare, al centro bilancia + tastierino, a sinistra il sacchetto con le pesate */
+#bil[hidden]{display:none}
+#bil{position:fixed;inset:0;z-index:4;background:#efe3c8 url(bil-sfondo.jpg) center bottom/cover no-repeat;color:var(--ink);display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end;box-sizing:border-box;padding:calc(8px + env(safe-area-inset-top,0px)) calc(10px + env(safe-area-inset-right,0px)) calc(4vh + env(safe-area-inset-bottom,0px)) calc(10px + env(safe-area-inset-left,0px))}
+#bil .col{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-width:0}
+.sign{background:url(bil-sign.png) center/100% 100% no-repeat;width:150px;padding:22px 0 10px;text-align:center;font-weight:700;font-size:15px;color:#fff8e0;text-shadow:2px 2px 0 #5a3418}
+.prop{width:min(150px,90%);pointer-events:none;margin-top:-30px}
+.items{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-content:flex-end;flex:1;min-height:70px;position:relative;z-index:1}
+.it{display:grid;justify-items:center;font-size:12px;touch-action:none;text-shadow:0 0 3px #fff8e8}.it canvas{position:static;width:58px;height:58px}
+.it small{background:url(bil-label.png) center/100% 100% no-repeat;padding:7px 7px 4px;font-size:11px;line-height:1.15;text-shadow:none}
+#ghost{position:fixed;transform:translate(-50%,-50%);pointer-events:none;z-index:9}
+#cM{display:flex;flex-direction:column;align-items:center;gap:6px}#mid{display:flex;gap:12px;align-items:flex-end}
+#sc{width:250px;display:grid;justify-items:center}
+#plate{position:relative;z-index:1;width:210px;height:78px;margin-bottom:-26px;display:flex;justify-content:center;align-items:flex-end;font-size:12px;border-radius:40%}
+#plate.hot{background:radial-gradient(closest-side,rgba(124,240,138,.7),transparent)}#plate:empty::after{content:"trascina qui";opacity:.7;margin-bottom:30px}#plate .it span{display:none}
+#scbody{position:relative;width:250px;aspect-ratio:600/297;background:url(bil-scale.png) center/100% 100% no-repeat}
+#disp{position:absolute;left:11.3%;top:48.1%;width:77%;height:28.7%;color:#9cff9a;font:700 15px ui-monospace,monospace;display:grid;place-items:center;text-align:center;line-height:1.1;text-shadow:0 0 6px #4cff70}
+#bar{position:absolute;left:14%;width:72%;bottom:24%;height:4px;background:rgba(0,0,0,.25)}#bar i{display:block;height:100%;width:0;background:#9cff9a}
+#pad{position:relative;width:160px;aspect-ratio:600/673;background:url(bil-keypad.png) center/100% 100% no-repeat}
+#pad button{position:absolute;background:transparent;border:0;padding:0;font:700 18px "Pixelify Sans",monospace;color:var(--ink);border-radius:4px}
+#pad button:active{background:rgba(40,30,20,.18)}#pad .c,#pad .ok{font-size:12px}
+#fatto{width:64px;height:64px;border:0;background:url(bil-button.png) center/100% 100% no-repeat;font:700 13px "Pixelify Sans",monospace;color:#3a1010}
+#fatto:active{transform:scale(.94)}
+/* lista codici: chi non se li ricorda li consulta (intanto il tempo scorre) */
+#btns{display:flex;gap:12px;align-items:center}
+#codbtn{height:48px;padding:0 10px;border:3px solid var(--ink);border-radius:6px;background:var(--paper);font:800 12px/1.1 system-ui,sans-serif;color:var(--ink);box-shadow:3px 3px 0 rgba(0,0,0,.3)}#codbtn:active{transform:scale(.94)}
+#cod{position:absolute;inset:0;z-index:8;background:rgba(20,14,10,.55);display:grid;place-items:center}#cod[hidden]{display:none}
+#cod>div{background:var(--paper);border:4px solid var(--ink);border-radius:6px;padding:10px 14px;max-width:94vw;max-height:92vh;overflow:auto;text-align:center;box-sizing:border-box}
+#codlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:6px;margin:8px 0;width:min(520px,84vw)}
+#cod>div{font-family:system-ui,sans-serif}.ci{display:grid;justify-items:center;font-size:12px;font-weight:700}.ci canvas{position:static;width:44px;height:44px}.ci b{font-size:24px;color:#a02020}
+#cR{padding-top:46px;box-sizing:border-box}#cL .prop{width:min(105px,80%);margin-top:-4px}
+@media (orientation:portrait){#bil{grid-template-columns:1fr 1fr;grid-template-rows:1fr auto}#cM{grid-column:1/-1;grid-row:2}#sc,#scbody{width:196px}#plate{width:170px}#pad{width:132px}#mid{gap:8px}}
+#salta{right:calc(124px + env(safe-area-inset-right,0px));bottom:calc(102px + env(safe-area-inset-bottom,0px));width:70px;height:70px;background:#9ac4f0;color:#0c2440}
+</style>
+<canvas id="c"></canvas>
+<div id="hud"><b>LISTA</b><ul id="list"></ul></div>
+<div id="time">2:00</div>
+<div id="msg" hidden></div>
+<div id="dx"><div id="turno"><button id="prenota">PRENOTA</button><div id="oro" hidden><i></i><span></span></div></div><div id="mturno" hidden></div><div id="coda" class="fila"><b>⚖ FILA BILANCIA</b><ol id="qlist"></ol></div><div id="mcoda" class="fila" hidden><b id="mhead">🥩 MACELLERIA</b><ol id="mlist"></ol></div></div>
+<div id="bil" hidden>
+ <div class="col" id="cL"><div class="sign">PESATE</div><div id="done" class="items"></div><img class="prop" src="bil-bag.png" alt=""></div>
+ <div id="cM"><div id="mid"><div id="sc"><div id="plate"></div><div id="scbody"><div id="disp"></div><div id="bar"><i></i></div></div></div>
+  <div id="pad"><button data-k="1" style="left:4.3%;top:3.8%;width:28.8%;height:21.4%">1</button><button data-k="2" style="left:35.6%;top:3.8%;width:28.8%;height:21.4%">2</button><button data-k="3" style="left:67.0%;top:3.8%;width:28.8%;height:21.4%">3</button><button data-k="4" style="left:4.3%;top:27.5%;width:28.8%;height:21.4%">4</button><button data-k="5" style="left:35.6%;top:27.5%;width:28.8%;height:21.4%">5</button><button data-k="6" style="left:67.0%;top:27.5%;width:28.8%;height:21.4%">6</button><button data-k="7" style="left:4.3%;top:51.1%;width:28.8%;height:21.4%">7</button><button data-k="8" style="left:35.6%;top:51.1%;width:28.8%;height:21.4%">8</button><button data-k="9" style="left:67.0%;top:51.1%;width:28.8%;height:21.4%">9</button><button data-k="C" class="c" style="left:4.3%;top:74.8%;width:28.8%;height:21.4%">CANC</button><button data-k="0" style="left:35.6%;top:74.8%;width:28.8%;height:21.4%">0</button><button data-k="OK" class="ok" style="left:67.0%;top:74.8%;width:28.8%;height:21.4%">OK</button></div></div>
+  <div id="btns"><button id="codbtn">📋 LISTA<br>CODICI</button><button id="fatto" aria-label="Fatto, lascia la bilancia">FATTO</button></div></div>
+ <div id="cod" hidden><div><b>CODICI FRUTTA E VERDURA</b><div id="codlist"></div><small>tocca per chiudere</small></div></div>
+ <div class="col" id="cR"><div class="sign">DA PESARE</div><div id="todo" class="items"></div><img class="prop" src="bil-basket.png" alt=""></div>
+</div>
+<div id="stick" aria-label="Levetta di movimento"><div id="knob"></div></div>
+<button class="btn" id="salta" aria-label="Salta">SALTA</button>
+<button class="btn" id="spingi" aria-label="Spingi">SPINGI</button>
+<button class="btn" id="prendi" aria-label="Prendi">PRENDI</button>
+<div id="over"><div><h1>La spesa della nonna</h1><p id="overTxt">Ogni partita il supermercato è disposto in modo diverso. Trova quello che c'è nella lista e vai alla cassa prima che chiuda. Frutta e verdura vanno pesate: prenota la bilancia e ricorda il codice scritto sulla cassetta.</p><p><b id="cta">Tocca PRENDI per iniziare</b></p></div></div>
+<script>
+// ===================================================================================
+// GRIGLIA ISOMETRICA. Una casella = rombo 116x60 px. i scende verso destra, j verso sinistra.
+// Le pareti stanno sui lati i=0 (sinistra) e j=0 (destra). Davanti la stanza è aperta.
+// ===================================================================================
+const atlas=new Image();atlas.src='personaggi2.png?v=2';
+const PG=/*PG*/{"nonna:idle":[0,0,106,205,67,205],"nonna:w1":[108,0,130,207,84,207],"nonna:w2":[240,0,128,207,80,207],"nonna:w3":[370,0,122,207,72,207],"nonna:bidle":[494,0,103,194,60,194],"nonna:b1":[599,0,104,197,62,197],"nonna:b2":[705,0,103,196,63,196],"nonna:b3":[810,0,102,197,59,197],"nonna:reach":[914,0,166,199,81,199],"nonna:bend":[1082,0,156,177,90,177],"nonna:bag":[1240,0,87,201,41,201],"nonna:jump":[0,209,154,191,71,191],"nonna:scale":[156,209,161,200,94,200],"nonna:box":[319,209,121,200,38,200],"nonna:win":[442,209,138,201,70,201],"nonna:lose":[582,209,112,200,51,200],"baffi:idle":[696,209,193,250,133,250],"baffi:w1":[891,209,199,250,140,250],"baffi:w2":[1092,209,193,250,134,250],"baffi:w3":[0,461,191,250,132,250],"baffi:bidle":[193,461,164,221,71,221],"baffi:b1":[359,461,165,221,68,221],"baffi:b3":[526,461,149,221,61,221],"baffi:think":[677,461,204,263,140,263],"baffi:grab":[883,461,279,263,215,263],"mamma:idle":[1164,461,157,245,102,245],"mamma:w1":[0,726,179,244,124,244],"mamma:w2":[181,726,177,244,112,244],"mamma:w3":[360,726,179,244,123,244],"mamma:b1":[541,726,113,229,46,229],"mamma:b2":[656,726,139,229,48,229],"mamma:b3":[797,726,142,229,50,229],"mamma:list":[941,726,180,239,122,239],"mamma:point":[1123,726,181,239,123,239],"mamma:scold":[0,972,182,239,124,239],"anziano:idle":[184,972,155,240,51,240],"anziano:w1":[341,972,154,240,71,240],"anziano:bidle":[497,972,154,244,96,244],"anziano:b1":[653,972,156,247,78,247],"anziano:b2":[811,972,154,237,100,237],"anziano:b3":[967,972,155,247,80,247],"anziano:look":[1124,972,180,238,79,238],"anziano:put":[0,1221,188,237,79,237],"anziano:hat":[190,1221,175,265,78,265],"anziano:cane":[367,1221,217,263,78,263],"ragazzo:idle":[586,1221,98,235,42,235],"ragazzo:w1":[686,1221,134,229,100,229],"ragazzo:w2":[822,1221,149,229,116,229],"ragazzo:w3":[973,1221,169,205,41,205],"ragazzo:bidle":[1144,1221,89,236,54,236],"ragazzo:b1":[1235,1221,141,226,115,226],"ragazzo:b3":[0,1488,155,216,96,216],"ragazzo:skid":[157,1488,214,238,152,238],"ragazzo:grab":[373,1488,136,233,76,233],"ragazzo:trip":[511,1488,205,236,92,236],"ragazzo:sorry":[718,1488,124,244,48,244],"cassieri:f_idle":[844,1488,85,250,42,250],"cassieri:f_scan":[931,1488,126,250,39,250],"cassieri:f_type":[1059,1488,147,250,37,250],"cassieri:f_wave":[1208,1488,120,250,38,250],"cassieri:m_idle":[0,1740,84,254,36,254],"cassieri:m_scan":[86,1740,118,253,32,253],"cassieri:m_type":[206,1740,142,248,31,248],"cassieri:m_wave":[350,1740,118,253,40,253],"macellaio:idle":[470,1740,104,255,35,255],"macellaio:chop":[576,1740,134,263,26,263],"macellaio:give":[712,1740,156,255,30,255],"macellaio:call":[870,1740,151,255,42,255]}/*PG*/; // pose dei personaggi: chiave 'chi:posa' -> [x,y,w,h,piedi x,piedi y], tutte girate a destra
+const T=58,U=30,ART=4,FW=24,FH=55,WALLH=250,MARG=90;
+let MAC,MAC_NODE,R,C,OX,OY,BW=2000,BH=1400,CELL,MODS=[],SPOTS=[],NODES=[],ADJ=[],SCALE,SCALE_STAND,SCALE_NODE,CASSE=[],START,STAGE;
+const iso=(i,j,h=0)=>[OX+(i-j)*T,OY+(i+j)*U-h];
+const toTile=(x,y)=>{const a=(x-OX)/T,b=(y-OY)/U;return [(a+b)/2,(b-a)/2]};
+const free=(i,j)=>i>=0&&j>=0&&i<R&&j<C&&CELL[i][j]<0;
+const okPoint=(x,y)=>{const [i,j]=toTile(x,y);return free(Math.floor(i),Math.floor(j))};
+const walkable=(x,y,r=26)=>okPoint(x-r,y)&&okPoint(x+r,y)&&okPoint(x,y-r*.45)&&okPoint(x,y+r*.4);
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const rnd=(a,b)=>a+Math.random()*(b-a),ri=n=>Math.random()*n|0;
+
+// ===================================================================================
+// CATALOGO: cosa sta su ogni mobile. Uno scaffale è vuoto finché non gli si dà una categoria.
+// [forma della confezione, colore principale, colore etichetta]
+// ===================================================================================
+const PACK={PASTA:['pack','#2a5cb0','#f0c838'],BISCOTTI:['box','#c43c30','#f2d48a'],CEREALI:['tall','#e88a20','#f4e6a8'],CONSERVE:['can','#c83828','#e0e0d8'],
+ 'CAFFÈ':['pack','#4a2c1c','#d4a868'],OLIO:['bottle','#b8b028','#f0e878'],VINO:['bottle','#5c1424','#c8a050'],ACQUA:['bottle','#80c0ec','#2a70c0'],
+ BIBITE:['bottle','#d83030','#f4f4f4'],RISO:['pack','#f2f0e6','#d03838']};
+const COLD={LATTE:['carton','#f8f8f8','#3070d0'],YOGURT:['jar','#f8f0e0','#e070a8'],SUCCHI:['carton','#f08820','#38a048'],BURRO:['box','#f4e6a0','#2a6ab8']};
+const FRUIT={MELE:['#d83a30',12],BANANE:['#f2d030',0],ARANCE:['#f08a20',13],POMODORI:['#e83828',10],INSALATA:['#9ad860',18],BROCCOLI:['#3a8a30',0],UVA:['#7a3aa0',0],CAVOLI:['#c0e090',19],CAROTE:['#f07818',0]};
+const FRESH=new Set(Object.keys(FRUIT));
+
+// ===================================================================================
+// KIT DEI MOBILI (provvisorio, disegnato in codice). Ogni tipo = una funzione di disegno.
+// Quando arriva il foglio pezzi, si sostituisce qui il disegno e il resto non cambia.
+// Colori: [sopra, fianco sinistro, fianco destro, contorno]
+// ===================================================================================
+const METAL=['#eef1f4','#cfd6de','#a9b2be','#4a525e'],BOARD=['#f6f7f8','#bcc4cc','#9aa3ae','#4a525e'],PANEL=['#dde2e8','#c4ccd6','#a4aebb','#4a525e'],
+ FPANEL=['#3a4e68','#30425a','#263548','#1a2430'],FBODY=['#f4f6f8','#e0e6ec','#bcc6d2','#4a525e'],FBOARD=['#d8e2ec','#a8b6c4','#8a98a8','#2a3440'],
+ WOOD=['#d0935a','#ad7040','#87542c','#3c2414'],WOODD=['#8a5a30','#704622','#5a381a','#3c2414'],CHECK=['#dfe8dc','#b0c6ae','#8ea68c','#3a4a3a'];
+function poly(c,pts,fill,stroke,lw=3){c.beginPath();pts.forEach(([x,y],k)=>k?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fillStyle=fill;c.fill();if(stroke){c.strokeStyle=stroke;c.lineWidth=lw;c.lineJoin='round';c.stroke()}}
+function box(c,i0,j0,w,d,h0,h1,col){const i1=i0+w,j1=j0+d;
+  poly(c,[iso(i0,j1,h0),iso(i1,j1,h0),iso(i1,j1,h1),iso(i0,j1,h1)],col[1],col[3]);
+  poly(c,[iso(i1,j0,h0),iso(i1,j1,h0),iso(i1,j1,h1),iso(i1,j0,h1)],col[2],col[3]);
+  poly(c,[iso(i0,j0,h1),iso(i1,j0,h1),iso(i1,j1,h1),iso(i0,j1,h1)],col[0],col[3])}
+// ogni mobile si disegna in coordinate proprie: u lungo il mobile, v di traverso (v=1 è il lato che si vede)
+function frame(m){const f=m.ax==='i';return{P:(u,v,h)=>f?iso(m.i+u,m.j+v,h):iso(m.i+v,m.j+u,h),
+  B:(c,u0,u1,v0,v1,h0,h1,col)=>f?box(c,m.i+u0,m.j+v0,u1-u0,v1-v0,h0,h1,col):box(c,m.i+v0,m.j+u0,v1-v0,u1-u0,h0,h1,col)}}
+// confezioni a pixel grossi (4 px come i personaggi): [x,y dal basso,w,h,colore]
+const SHAPES={bottle:(a,b)=>[[0,0,3,6,a],[0,2,3,2,b],[1,6,1,2,a],[1,8,1,1,'#2a2a30']],can:(a,b)=>[[0,0,3,4,a],[0,1,3,2,b],[0,3,3,1,'#e8e8f0']],
+ box:(a,b)=>[[0,0,4,6,a],[0,2,4,2,b]],tall:(a,b)=>[[0,0,3,8,a],[0,3,3,3,b]],pack:(a,b)=>[[0,0,3,6,a],[1,2,1,3,b]],
+ carton:(a,b)=>[[0,0,3,6,a],[0,1,3,2,b],[1,6,1,1,a]],jar:(a,b)=>[[0,0,3,3,a],[0,2,3,1,b]]};
+function prod(c,x,y,kind,a,b){const parts=SHAPES[kind](a,b),P=ART,x0=Math.round(x-1.5*P);
+  c.fillStyle='#24222c';for(const [px,py,w,h] of parts)c.fillRect(x0+px*P-2,y-(py+h)*P-2,w*P+4,h*P+4);
+  for(const [px,py,w,h,col] of parts){c.fillStyle=col;c.fillRect(x0+px*P,y-(py+h)*P,w*P,h*P)}
+  const [,,w0,h0]=parts[0];c.fillStyle='rgba(255,255,255,.35)';c.fillRect(x0,y-h0*P,2,h0*P);c.fillStyle='rgba(0,0,0,.18)';c.fillRect(x0+w0*P-3,y-h0*P,3,h0*P)}
+function sign(c,x,y,t){c.font='700 26px "Pixelify Sans",monospace';const w=c.measureText(t).width+20;c.fillStyle='#55606a';c.fillRect(x-w/2+8,y-62,3,46);c.fillRect(x+w/2-11,y-62,3,46);
+  c.fillStyle='#2a3a2e';c.fillRect(x-w/2-3,y-19,w+6,38);c.fillStyle='#a8e4b4';c.fillRect(x-w/2,y-16,w,32);c.fillStyle='#1c3a24';c.textAlign='center';c.textBaseline='middle';c.fillText(t,x,y+1)}
+function fruit(c,x,y,n){const [col,r]=FRUIT[n];c.strokeStyle='#2a1c14';c.lineWidth=2.5;
+  const ball=(x,y,r,f)=>{c.beginPath();c.arc(x,y,r,0,7);c.fillStyle=f;c.fill();c.stroke()},hi=(x,y,r)=>{c.fillStyle='rgba(255,255,255,.5)';c.fillRect(x-r*.5,y-r*.55,r*.38,r*.38)};
+  if(n==='BANANE'){const a=rnd(-.4,.4);c.lineCap='round';for(const [s,w] of [['#2a1c14',11],[col,6]]){c.strokeStyle=s;c.lineWidth=w;c.beginPath();c.arc(x,y-20,16,.25*Math.PI+a,.8*Math.PI+a);c.stroke()}c.lineCap='butt'}
+  else if(n==='CAROTE'){c.save();c.translate(x,y-8);c.rotate(rnd(-.7,.7));c.fillStyle='#2a1c14';c.fillRect(-6,-16,12,28);c.fillStyle=col;c.fillRect(-4,-14,8,24);c.fillStyle='#3a9a30';c.fillRect(-3,-22,6,8);c.restore()}
+  else if(n==='UVA'){for(const [dx,dy] of [[-5,-10],[5,-10],[0,-4],[-4,-16],[4,-16],[0,-21]])ball(x+dx,y+dy,5.5,col)}
+  else if(n==='BROCCOLI'){c.fillStyle='#6a9a40';c.fillRect(x-3,y-8,6,8);ball(x-7,y-12,8,col);ball(x+7,y-12,8,col);ball(x,y-18,9,'#4aa040');hi(x,y-18,9)}
+  else{ball(x,y-r*.7,r,col);if(r>15){ball(x,y-r*.95,r*.6,'rgba(255,255,255,.25)')}hi(x,y-r*.7,r)}}
+
+// pezzi del foglio AI, già scalati alla griglia da tools/kit.py (kit.png + misure qui sotto)
+const kit=new Image();kit.src='kit.png?v=5'; // ?v: il telefono non tiene la vecchia immagine
+const KJ=/*KIT*/{"scaffale":{"ax":5.4,"ay":181.6,"L":4,"sv":0.4462,"boards":[149.0,104.4,59.8,10.7],"spans":[[0.03,0.44],[0.52,0.96]],"r":[581,0,277,304]},"muro":{"ax":4.2,"ay":241.2,"L":3,"sv":0.5631,"boards":[203.8,125.0,74.3,20.8],"spans":[[0.02,1.0]],"r":[0,0,235,332]},"frigo":{"ax":2.9,"ay":262.5,"L":2,"sv":0.45,"boards":[155.7,115.2,74.7,38.7],"spans":[[0.06,0.46],[0.56,0.94]],"r":[237,0,170,323]},"frigo:vetro":{"ax":2.9,"ay":262.5,"r":[409,0,170,323]},"cassetta":{"ax":4.4,"ay":84.8,"L":1,"sv":0.3694,"r":[50,868,132,117]},"pane":{"ax":2.7,"ay":165.7,"L":2,"sv":0.42,"r":[264,635,175,228]},"pane:vetro":{"ax":2.7,"ay":165.7,"r":[441,635,175,228]},"cassa":{"ax":141.8,"ay":206.8,"L":3,"sv":0.5273,"r":[0,334,412,299]},"cassa2":{"ax":24.7,"ay":135.2,"L":3,"sv":0.45,"r":[0,635,262,231]},"salumi":{"ax":13.5,"ay":146.5,"L":3,"sv":0.3742,"r":[414,334,264,241]},"bancale":{"ax":0.9,"ay":67.8,"L":2,"sv":0.3045,"r":[799,635,199,129]},"cesta":{"ax":2.4,"ay":123.4,"L":0.7,"sv":0.2671,"r":[699,635,98,146]},"testata":{"ax":1.7,"ay":155.6,"L":1,"sv":0.3,"boards":[104.1,72.3,40.5,9.0],"spans":[[0.05,0.85]],"r":[618,635,79,189]},"bilancia":{"ax":4.3,"ay":81.0,"L":0.9,"sv":0.4789,"r":[283,868,125,110]},"macelleria":{"ax":16.0,"ay":139.8,"L":3,"sv":0.2434,"r":[680,334,291,234]},"display":{"ax":0.7,"ay":56.2,"L":1.32,"sv":0.243,"r":[410,868,97,97]},"insegna":{"ax":1.7,"ay":65.2,"L":1.6,"sv":0.2442,"r":[184,868,97,116]},"p:ACQUA:0":{"r":[665,868,22,61]},"p:VINO:0":{"r":[509,868,19,72]},"p:OLIO:0":{"r":[689,868,20,61]},"p:BIBITE:0":{"r":[475,1059,21,40]},"p:CONSERVE:0":{"r":[498,1059,24,40]},"p:BISCOTTI:0":{"r":[179,1059,32,47]},"p:CAFFÈ:0":{"r":[991,996,33,50]},"p:CEREALI:0":{"r":[711,868,36,61]},"p:RISO:0":{"r":[213,1059,27,47]},"p:LATTE:0":{"r":[186,996,24,58]},"p:YOGURT:0":{"r":[826,1059,22,27]},"p:BURRO:0":{"r":[917,1059,28,23]},"p:FORMAGGI:0":{"r":[524,1059,47,40]},"p:MELE:0":{"r":[299,996,66,54]},"p:ARANCE:0":{"r":[367,996,68,54]},"p:BANANE:0":{"r":[437,996,58,54]},"p:POMODORI:0":{"r":[497,996,70,54]},"p:UVA:0":{"r":[597,868,66,65]},"p:INSALATA:0":{"r":[749,868,62,61]},"p:CAVOLI:0":{"r":[813,868,64,61]},"p:BROCCOLI:0":{"r":[879,868,56,61]},"p:CAROTE:0":{"r":[569,996,70,54]},"p:CARNE:0":{"r":[641,996,86,54]},"distributore":{"r":[0,868,48,126]},"p:PASTA:0":{"r":[729,996,35,54]},"p:PASTA:1":{"r":[766,996,36,54]},"p:PASTA:2":{"r":[804,996,36,54]},"p:BISCOTTI:1":{"r":[0,1059,27,50]},"p:BISCOTTI:2":{"r":[29,1059,26,50]},"p:BISCOTTI:3":{"r":[57,1059,27,50]},"p:BISCOTTI:4":{"r":[242,1059,29,43]},"p:BISCOTTI:5":{"r":[273,1059,29,43]},"p:BISCOTTI:6":{"r":[304,1059,29,43]},"p:CEREALI:1":{"r":[937,868,36,61]},"p:CEREALI:2":{"r":[975,868,36,61]},"p:CEREALI:3":{"r":[0,996,37,61]},"p:CEREALI:4":{"r":[39,996,36,61]},"p:CAFFÈ:1":{"r":[842,996,28,54]},"p:CAFFÈ:2":{"r":[872,996,29,54]},"p:RISO:1":{"r":[86,1059,29,50]},"p:RISO:2":{"r":[117,1059,29,50]},"p:RISO:3":{"r":[148,1059,29,50]},"p:CONSERVE:1":{"r":[335,1059,26,43]},"p:CONSERVE:2":{"r":[363,1059,26,43]},"p:CONSERVE:3":{"r":[391,1059,26,43]},"p:CONSERVE:4":{"r":[419,1059,26,43]},"p:CONSERVE:5":{"r":[447,1059,26,43]},"p:OLIO:1":{"r":[77,996,20,61]},"p:OLIO:2":{"r":[99,996,19,61]},"p:VINO:1":{"r":[530,868,20,72]},"p:VINO:2":{"r":[552,868,20,72]},"p:VINO:3":{"r":[574,868,21,72]},"p:ACQUA:1":{"r":[120,996,20,61]},"p:ACQUA:2":{"r":[142,996,20,61]},"p:ACQUA:3":{"r":[164,996,20,61]},"p:BIBITE:1":{"r":[573,1059,21,40]},"p:BIBITE:2":{"r":[596,1059,21,40]},"p:BIBITE:3":{"r":[619,1059,21,40]},"p:SUCCHI:0":{"r":[903,996,27,54]},"p:SUCCHI:1":{"r":[932,996,28,54]},"p:SUCCHI:2":{"r":[962,996,27,54]},"p:LATTE:1":{"r":[212,996,27,58]},"p:LATTE:2":{"r":[241,996,27,58]},"p:LATTE:3":{"r":[270,996,27,58]},"p:YOGURT:1":{"r":[698,1059,26,29]},"p:YOGURT:2":{"r":[726,1059,26,29]},"p:YOGURT:3":{"r":[754,1059,27,29]},"p:PANE:0":{"r":[642,1059,54,36]},"p:PANE:1":{"r":[850,1059,65,25]},"p:PANE:2":{"r":[947,1059,71,22]},"p:PANE:3":{"r":[783,1059,41,29]}}/*KIT*/;
+const FV={macelleria:2,scaffale:.8,muro:.5,frigo:.92,pane:.88,cassetta:1,cassa2:1.9,salumi:1,bancale:1.7,cesta:.95,testata:.95};
+const VAR=c=>Object.keys(KJ).filter(k=>k.startsWith('p:'+c+':')); // tutte le marche di una categoria // dove cade il bordo anteriore dentro la casella
+const anchor=(m,fv,du=0)=>m.ax==='i'?iso(m.i+du,m.j+fv):iso(m.i+fv,m.j+du);
+function spr(c,n,x,y,mir,s=1){const k=KJ[n],[sx,sy,sw,sh]=k.r,ax=k.ax??sw/2,ay=k.ay??sh;c.save();c.translate(x,y);if(mir)c.scale(-1,1);c.imageSmoothingEnabled=true;c.drawImage(kit,sx,sy,sw,sh,-ax*s,-ay*s,sw*s,sh*s);c.restore()}
+// riempie i ripiani di un pezzo con la confezione della categoria, una accanto all'altra
+function fill(c,m,piece,du,cat,rows){const k=KJ[piece],[x0,y0]=anchor(m,FV[piece],du),mir=m.ax==='j',len=k.L*58,B=k.boards,V=VAR(cat);
+  // ogni ripiano: confezioni grandi quanto lo spazio libero, più file in profondità, impilate se basse, marche a blocchi
+  B.forEach((hb,i)=>{const gap=(i?B[i-1]-hb:B[0]-B[1])-7;
+    for(const d of rows)for(const [t0,t1] of k.spans){let x=t0*len,v,left=0;
+      while(true){if(left--<=0){v=V[ri(V.length)];left=1+ri(3)}const [,,pw0,ph0]=KJ[v].r,s=Math.min(1,gap*.8/ph0),pw=pw0*s,ph=ph0*s,stack=Math.max(1,Math.floor(gap*.85/ph));
+        if(x+pw>t1*len+1)break;const cx=x+pw/2;
+        for(let q=0;q<stack;q++){const lx=cx+d*58,ly=cx*30/58-hb-d*30-q*ph*.9;spr(c,v,x0+(mir?-lx:lx),y0+ly,false,s)}x+=pw*.92}}})}
+// mucchio di confezioni su un piano (bancale, cesta): righe dal fondo in avanti, h = altezza del piano
+function heap(c,m,fv,du,cat,us,vs,h,s,layers){const [ax,ay]=anchor(m,fv,du),mir=m.ax==='j',V=VAR(cat),pts=[];
+  for(const v of vs)for(const u of us)pts.push([u,v]);pts.sort((p,q)=>p[0]-p[1]-(q[0]-q[1]));
+  for(let q=0;q<layers;q++)for(const [u,v] of pts){const id=V[ri(V.length)],ph=KJ[id].r[3]*s,lx=u*58+v*58,ly=u*30-v*30-h-q*ph*.85;spr(c,id,ax+(mir?-lx:lx),ay+ly,false,s)}}
+function skewText(c,t,x,y,mir,size,col){c.save();c.translate(x,y);c.transform(1,(mir?-1:1)*30/58,0,1,0,0);c.font='700 '+size+'px "Pixelify Sans",monospace';c.textAlign='center';c.textBaseline='middle';c.lineWidth=size/5;c.strokeStyle='rgba(0,0,0,.6)';c.strokeText(t,0,0);c.fillStyle=col;c.fillText(t,0,0);c.restore()}
+const CRATE=42; // altezza di una cassetta in px di gioco
+function crates(c,m,du,n){const [x,y]=anchor(m,1,du),mir=m.ax==='j';for(let k=0;k<n;k++)spr(c,'cassetta',x,y-k*CRATE,mir);
+  const lx=58,ly=30*.5-15-n*CRATE+6;return [x+(mir?-lx:lx),y+ly]} // centro della cassetta in cima
+const KIT={
+  scaffale(c,m){const n=m.wall?'muro':'scaffale',pl=KJ[n].L;for(let u=0;u<m.L;u+=pl){const [x,y]=anchor(m,FV[n],u);spr(c,n,x,y,m.ax==='j');fill(c,m,n,u,m.cat,m.wall?[.52,.36,.2,.04]:[.36,.2,.04])}
+    const [sx,sy]=m.ax==='i'?iso(m.i+m.L/2,m.j+.55,m.wall?255:225):iso(m.i+.55,m.j+m.L/2,m.wall?255:225);sign(c,sx,sy,m.cat);m.labelH=m.wall?205:180},
+  frigo(c,m){for(let u=0;u<m.L;u+=2){const [x,y]=anchor(m,FV.frigo,u);spr(c,'frigo',x,y,m.ax==='j');fill(c,m,'frigo',u,m.cat,[.52,.34]);spr(c,'frigo:vetro',x,y,m.ax==='j')}
+    const [sx,sy]=m.ax==='i'?iso(m.i+m.L/2,m.j+.5,290):iso(m.i+.5,m.j+m.L/2,290);sign(c,sx,sy,m.cat);m.labelH=230},
+  pane(c,m){const [x,y]=anchor(m,FV.pane),mir=m.ax==='j';spr(c,'pane',x,y,mir);
+    const V=VAR('PANE');for(const hb of [66,24])for(const dv of [.7,.5,.3])for(let t=6+ri(10);t<m.L*58-16;){const id=V[ri(V.length)],sc=.5,w=KJ[id].r[2]*sc;const cx=t+w/2,lx=cx+dv*58,ly=cx*30/58-hb-dv*30;spr(c,id,x+(mir?-lx:lx),y+ly,false,sc);t+=w*.7}
+    spr(c,'pane:vetro',x,y,mir);const [sx,sy]=m.ax==='i'?iso(m.i+1,m.j+.5,200):iso(m.i+.5,m.j+1,200);sign(c,sx,sy,'PANE');m.labelH=150},
+  frutta(c,m){const mir=m.ax==='j';m.items.forEach((n,k)=>{crates(c,m,k,2);const [ax,ay]=anchor(m,1,k),big=['INSALATA','CAVOLI','BROCCOLI'].includes(n);
+    // mucchio: tante copie del frutto sulla cassetta di sopra, dal fondo in avanti, più alto al centro
+    const P=(u,v,h)=>{const lx=u*58+(1-v)*58,ly=u*30-(1-v)*30-h;return [ax+(mir?-lx:lx),ay+ly]},pts=[];
+    for(const u of [.22,.5,.78])for(const v of [.22,.5,.78])pts.push([u+rnd(-.05,.05),v+rnd(-.05,.05)]);if(!big)for(const [u,v] of [[.36,.36],[.64,.64],[.36,.64],[.64,.36]])pts.push([u,v]);
+    pts.sort((p,q)=>p[0]+p[1]-q[0]-q[1]);
+    for(const [u,v] of pts){const bump=(1-Math.hypot(u-.5,v-.5)*1.6)*10,[x,y]=P(u,v,2*CRATE-14+bump);spr(c,'p:'+n+':0',x,y,Math.random()<.5,big?.4:.345)}
+    const [cx,cy]=P(.5,1,CRATE+14);c.fillStyle='#2a1c14';c.fillRect(cx-11,cy-8,22,14);c.fillStyle='#f4f8e8';c.fillRect(cx-9,cy-6,18,10);c.fillStyle='#d83030';c.fillRect(cx-7,cy-4,14,3)});m.labelH=120},
+  cassa(c,m){const [x,y]=anchor(m,FV.cassa2);spr(c,'cassa2',x,y,m.ax==='j')},
+  salumi(c,m){const [x,y]=anchor(m,FV.salumi),mir=m.ax==='j';spr(c,'salumi',x,y,mir);heap(c,m,FV.salumi,0,'FORMAGGI',[.3,.6,.9,1.2,1.5,1.8,2.1,2.4,2.7],[.7,.5,.3],50,.5,1);
+    const [sx,sy]=m.ax==='i'?iso(m.i+1.5,m.j+.3,175):iso(m.i+.3,m.j+1.5,175);sign(c,sx,sy,'FORMAGGI');m.labelH=120},
+  bancale(c,m){const [x,y]=anchor(m,FV.bancale),mir=m.ax==='j';spr(c,'bancale',x,y,mir);const cans=m.cat==='BIBITE';
+    const st=(a,b,n)=>Array.from({length:n},(_,k)=>a+(b-a)*k/(n-1));heap(c,m,FV.bancale,0,m.cat,cans?st(.15,1.85,9):st(.25,1.75,7),cans?st(1.75,.25,6):st(1.65,.35,5),18,cans?.5:.55,cans?3:1);
+    const [sx,sy]=m.ax==='i'?iso(m.i+1,m.j+1,150):iso(m.i+1,m.j+1,150);sign(c,sx,sy,m.cat);m.labelH=100},
+  cesta(c,m){const [x,y]=anchor(m,FV.cesta,.15),mir=m.ax==='j';spr(c,'cesta',x,y,mir);heap(c,m,FV.cesta,.15,m.cat,[.12,.32,.52],[.65,.45,.25],78,.36,1);
+    const [sx,sy]=iso(m.i+.5,m.j+.5,190);sign(c,sx,sy,'OFFERTA');m.labelH=110},
+  testata(c,m){const [x,y]=anchor(m,FV.testata),mir=m.ax==='j';spr(c,'testata',x,y,mir);fill(c,m,'testata',0,m.cat,[.2,.05]);m.labelH=150},
+  // macelleria contro la parete sinistra (asse j): bancone 3 caselle + distributore di numeri nella quarta, macellaio dietro
+  macelleria(c,m){const [x,y]=anchor(m,FV.macelleria),mir=m.ax==='j',sg=mir?-1:1;
+    const [wx,wy]=iso(m.i+.02,m.j+.1,190);spr(c,'display',wx,wy,mir,1.5);m.disp=[wx+sg*39*1.5,wy-3*1.5];
+    spr(c,'macelleria',x,y,mir);const [dx,dy]=iso(m.i+1.5,m.j+3.5);spr(c,'distributore',dx,dy+6,false,1);m.labelH=200}, // ponytail: insegna 'insegna' nell'atlante ma non usata (finiva dietro i frighi accanto)
+  bilancia(c,m){const [x,y]=crates(c,m,0,3);spr(c,'bilancia',x-(125/2-4.3)*1.2,y+6,false,1.2)},
+};
+const TALL={macelleria:440,scaffale:300,frigo:330,frutta:170,pane:260,cassa:260,bilancia:460,salumi:240,bancale:200,cesta:230,testata:220};
+
+// ===================================================================================
+// GENERATORE: mette i moduli sulla griglia secondo poche regole e controlla che tutto sia raggiungibile.
+// ===================================================================================
+function tryLevel(){
+  R=21+ri(3);C=24+ri(2);/* corsie larghe 3 caselle: negozio un po' più grande */CELL=Array.from({length:R},()=>Array(C).fill(-1));MODS=[];CASSE=[];
+  const mk=(type,ax,i,j,L,D,x)=>Object.assign({type,ax,i,j,L,D,w:ax==='i'?L:D,d:ax==='i'?D:L},x);
+  const put=m=>{for(let a=m.i;a<m.i+m.w;a++)for(let b=m.j;b<m.j+m.d;b++)if(!free(a,b))return false;
+    for(let a=m.i;a<m.i+m.w;a++)for(let b=m.j;b<m.j+m.d;b++)CELL[a][b]=MODS.length;MODS.push(m);return true};
+  const packs=shuffle(Object.keys(PACK)),colds=shuffle(Object.keys(COLD));let pk=0,ck=0;
+  const wallUnit=(ax,i,j,L,fridge)=>put(mk(fridge?'frigo':'scaffale',ax,i,j,L,1,{wall:true,cat:fridge?colds[ck++%colds.length]:packs[pk++%packs.length]}));
+  // parete destra (j=0): frigoriferi e scaffali a muro
+  for(let i=1;i<R-2;){let fr=Math.random()<.55,L=fr?2:3;if(i+L>R-1){if(i+2>R-1)break;fr=true;L=2}wallUnit('i',i,0,L,fr);i+=L+(Math.random()<.25?1:0)}
+  // parete sinistra (i=0): banco del pane e scaffali a muro
+  const mj=2+ri(C-10);put(mk('macelleria','j',0,mj,4,2,{wall:true})); // macelleria: profonda 2 (macellaio dietro), lunga 4 (bancone + distributore)
+  for(let t=0;t<20&&!put(mk('pane','j',0,1+ri(C-6),2,1,{wall:true,cat:'PANE'}));t++);
+  for(let t=0;t<20;t++){const j=1+ri(C-5);if([0,1,2].every(k=>free(0,j+k))){put(mk('salumi','j',0,j,3,1,{wall:true,cat:'FORMAGGI'}));break}}
+  for(let j=1;j<C-1;){const fr=Math.random()<.3,L=fr?2:3;let ok=j+L<=C-1;for(let k=0;k<L&&ok;k++)ok=free(0,j+k);if(!ok){j++;continue}wallUnit('j',0,j,L,fr);j+=L+(Math.random()<.25?1:0)}
+  // casse vicino all'angolo destro, con la cassiera
+  for(const [j,row] of [[3,3],[6,1]]){put(mk('cassa','i',R-3,j,3,2,{row}))}
+  // centro: zona frutta (banchi da 2 cassette) e zona scaffali doppi; quale sta davanti è a caso
+  const fruitBack=Math.random()<.5,fruitRows=fruitBack?[4,8]:[C-7,C-3],gz=fruitBack?[12,C-3]:[4,C-11];
+  const fresh=shuffle(Object.keys(FRUIT));let fk=0;
+  const gaps=[];for(const j of fruitRows)for(let i=4;i+2<=(j>=10?R-2:R-5);i+=4){put(mk('frutta','i',i,j,2,1,{items:[fresh[fk++%fresh.length],fresh[fk++%fresh.length]]}));if(j===fruitRows[0]&&i+2<=R-6)gaps.push(i+2)}
+  const gi=gaps[ri(gaps.length)],sj=fruitRows[0];put(mk('bilancia','i',gi,sj,1,1));
+  if(Math.random()<.5)for(let j=gz[0];j<=gz[1];j+=4)for(let i=4+ri(2),e=j>=10?R-2:R-5;i+4<=e;i+=6+ri(2))put(mk('scaffale','i',i,j,4,1,{cat:packs[pk++%packs.length]}))
+  else for(let i=4;i<=R-6;i+=4)for(let j=gz[0]+ri(2);j+4<=gz[1]+1;j+=6+ri(2))put(mk('scaffale','j',i,j,4,1,{cat:packs[pk++%packs.length]}))
+  // testate in fondo alle file che danno su uno spazio libero
+  for(const g of MODS.filter(m=>m.type==='scaffale'&&!m.wall))if(Math.random()<.6){
+    const [a,b,da,db]=g.ax==='i'?[g.i+4,g.j,1,0]:[g.i,g.j+4,0,1];if(free(a,b)&&free(a+da,b+db)&&free(a+2*da,b+2*db))put(mk('testata',g.ax==='i'?'j':'i',a,b,1,1,{cat:packs[pk++%packs.length]}))}
+  // bancali e ceste solo in mezzo a spazi aperti (tutt'intorno libero), così non chiudono le corsie
+  // ...e mai a ridosso dell'ingresso (casella R-2,C-2), dove nasce la nonna
+  const open=(a,b,w,d)=>{if(a+w>=R-3&&b+d>=C-3)return false;if(a<=4&&b+d>=mj-1&&b<=mj+5)return false; // né davanti alla macelleria
+  for(let x=a-1;x<=a+w;x++)for(let y=b-1;y<=b+d;y++)if(!free(x,y))return false;return true};
+  for(let t=0,nb=0,nc=0;t<80&&(nb<2||nc<2);t++){const a=2+ri(R-4),b=2+ri(C-4);
+    if(nb<2&&open(a,b,2,2)){put(mk('bancale','i',a,b,2,2,{cat:Math.random()<.5?'ACQUA':'BIBITE'}));nb++}
+    else if(nc<2&&open(a,b,1,1)){put(mk('cesta','i',a,b,1,1,{cat:packs[ri(packs.length)]}));nc++}}
+  // controllo: dall'ingresso si arriva a ogni mobile, alla bilancia e alle casse
+  START=[R-1.5,C-1.5];const seen=new Set([(R-2)+','+(C-2)]),q=[[R-2,C-2]];
+  while(q.length){const [a,b]=q.shift();for(const [da,db] of [[1,0],[-1,0],[0,1],[0,-1]]){const k=(a+da)+','+(b+db);if(free(a+da,b+db)&&!seen.has(k)){seen.add(k);q.push([a+da,b+db])}}}
+  const reach=m=>{for(let a=m.i-1;a<=m.i+m.w;a++)for(let b=m.j-1;b<=m.j+m.d;b++)if(seen.has(a+','+b))return true;return false};
+  return free(R-2,C-2)&&seen.has('2,'+(mj+1))&&seen.has('2,'+(mj+3))&&MODS.every(reach)&&seen.has(gi+','+(sj+1))}
+
+function newLevel(){
+  let n=0;while(!tryLevel()&&n++<60);
+  OX=MARG+C*T;OY=WALLH+170;BW=OX+R*T+MARG;BH=OY+(R+C)*U+90;
+  tryCoords();buildStage();buildNav()}
+function tryCoords(){ // il generatore lavora in caselle: qui converto casse e bilancia in pixel
+  CASSE=MODS.filter(m=>m.type==='cassa').map(m=>iso(m.i+1.5,m.j+2.6));
+  {const m=MODS.find(m=>m.type==='macelleria');MAC={m,stand:iso(m.i+2.45,m.j+1.5),disp:iso(m.i+2.3,m.j+3.5),but:iso(m.i+.6,m.j+1.6)}}
+  const s=MODS.find(m=>m.type==='bilancia');SCALE={x:iso(s.i+.5,s.j+.5)[0],y:iso(s.i+.5,s.j+.5)[1]};SCALE_STAND=iso(s.i+.5,s.j+1.6);
+  SPOTS=[];for(const m of MODS){if(!m.cat&&!m.items)continue;
+    for(let a=m.i;a<m.i+m.w;a++)for(let b=m.j;b<m.j+m.d;b++)SPOTS.push({i:a+.5,j:b+.5,n:m.items?m.items[m.ax==='i'?a-m.i:b-m.j]:m.cat,m})}}
+
+// ---------- disegno della stanza in un'unica immagine fissa
+function buildStage(){
+  STAGE=document.createElement('canvas');STAGE.width=BW;STAGE.height=BH;const s=STAGE.getContext('2d');
+  // pavimento
+  for(let i=0;i<R;i++)for(let j=0;j<C;j++){const g=226+ri(7)-((i+j)%2?5:0);poly(s,[iso(i,j),iso(i+1,j),iso(i+1,j+1),iso(i,j+1)],`rgb(${g-8},${g},${g+5})`,'#b4c0ca',2)}
+  poly(s,[iso(R,0),iso(R,C),iso(R,C,-28),iso(R,0,-28)],'#3c3e4a');poly(s,[iso(0,C),iso(R,C),iso(R,C,-28),iso(0,C,-28)],'#50526a');
+  // pareti: crema con zoccolo verde, qualche cartello OFFERTE
+  const wall=(a,b,f)=>{poly(s,[a(0),b(0),b(WALLH),a(WALLH)],f,'#6a5a48',3);poly(s,[a(0),b(0),b(20),a(20)],'#6a9a78');poly(s,[a(WALLH-16),b(WALLH-16),b(WALLH),a(WALLH)],'#88b498')};
+  wall(h=>iso(0,C,h),h=>iso(0,0,h),'#f0e2c2');wall(h=>iso(0,0,h),h=>iso(R,0,h),'#e6d4b0');
+  for(let k=0;k<3;k++){const a=2+ri(R-5);poly(s,[iso(a,0,WALLH-40),iso(a+.9,0,WALLH-40),iso(a+.9,0,WALLH-150),iso(a,0,WALLH-150)],'#fbf6ec','#7a2020',3);poly(s,[iso(a,0,WALLH-40),iso(a+.9,0,WALLH-40),iso(a+.9,0,WALLH-68),iso(a,0,WALLH-68)],'#d83030')}
+  // mobili dal fondo verso chi guarda; ognuno tiene la sua immagine per ridisegnarlo davanti ai personaggi
+  // b sta dietro ad a se è separato verso il fondo; se sono in diagonale (dietro su un asse, davanti sull'altro) decide la profondità del centro
+  const sep=(b,a)=>b.i+b.w<=a.i||b.j+b.d<=a.j,depth=m=>m.i+m.w/2+m.j+m.d/2,behind=(b,a)=>sep(b,a)&&(!sep(a,b)||depth(b)<depth(a)),left=[...MODS],order=[];
+  while(left.length){const k=left.findIndex(a=>!left.some(b=>b!==a&&behind(b,a)));order.push(...left.splice(Math.max(0,k),1))}
+  for(const m of order){const cs=[[m.i,m.j],[m.i+m.w,m.j],[m.i,m.j+m.d],[m.i+m.w,m.j+m.d]].flatMap(([a,b])=>[iso(a,b),iso(a,b,TALL[m.type])]);
+    m.bx=Math.floor(Math.min(...cs.map(p=>p[0]))-140);m.by=Math.floor(Math.min(...cs.map(p=>p[1]))-40);
+    m.cv=document.createElement('canvas');m.cv.width=Math.ceil(Math.max(...cs.map(p=>p[0]))+140-m.bx);m.cv.height=Math.ceil(Math.max(...cs.map(p=>p[1]))+20-m.by);
+    const c=m.cv.getContext('2d');c.translate(-m.bx,-m.by);KIT[m.type](c,m);s.drawImage(m.cv,m.bx,m.by)}}
+
+// ---------- rete di percorsi per i clienti
+function buildNav(){NODES=[];ADJ=[];const id={}; // un nodo al centro di ogni casella libera, collegato alle caselle libere accanto
+  for(let i=0;i<R;i++)for(let j=0;j<C;j++)if(free(i,j)){id[i+','+j]=NODES.length;NODES.push(iso(i+.5,j+.5));ADJ.push([])}
+  for(const k in id){const [i,j]=k.split(',').map(Number);for(const m of [id[(i+1)+','+j],id[i+','+(j+1)]])if(m!==undefined){ADJ[id[k]].push(m);ADJ[m].push(id[k])}}
+  // tengo solo il pezzo di grafo più grande: un'isola di due nodi (tra bancali e mobili) intrappolerebbe un cliente
+  const comp=new Array(NODES.length).fill(-1);let best=-1,bestN=0;
+  for(let i=0;i<NODES.length;i++){if(comp[i]>=0||!ADJ[i].length)continue;const q=[i];comp[i]=i;let n=0;while(q.length){const k=q.pop();n++;for(const m of ADJ[k])if(comp[m]<0){comp[m]=i;q.push(m)}}if(n>bestN){bestN=n;best=i}}
+  ADJ=ADJ.map((l,i)=>comp[i]===best?l:[]);
+  SCALE_NODE=nearestNode(...SCALE_STAND);MAC_NODE=nearestNode(...MAC.stand)}
+const nearestNode=(x,y)=>{let b=0,bd=1e9;NODES.forEach(([nx,ny],i)=>{const d=Math.hypot(nx-x,ny-y);if(d<bd&&ADJ[i].length){bd=d;b=i}});return b};
+function pathTo(a,b){const prev=new Map([[a,-1]]),q=[a];while(q.length){const n=q.shift();if(n===b)break;for(const m of ADJ[n])if(!prev.has(m)){prev.set(m,n);q.push(m)}}
+  if(!prev.has(b))return null;const p=[];for(let n=b;n!==-1;n=prev.get(n))p.unshift(NODES[n]);return p}
+
+// ===================================================================================
+// PARTITA (uguale a prima: lista, sacchetto, bilancia, cassa)
+// ===================================================================================
+const $=id=>document.getElementById(id);
+const cv=$('c'),ctx=cv.getContext('2d');let W=0,H=0,DPR=1;
+function resize(){DPR=Math.min(2,devicePixelRatio||1);W=cv.width=Math.round(innerWidth*DPR);H=cv.height=Math.round(innerHeight*DPR)}
+addEventListener('resize',resize);resize();
+let AC;function beep(f,d=.08,t='square'){try{AC=AC||new AudioContext();const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.value=.05;o.connect(g).connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch{}}
+const CAST=[{who:'baffi',cart:true,speed:150,extras:['think','grab']},{who:'mamma',cart:true,speed:135,extras:['list','point','scold']},
+  {who:'anziano',cart:false,speed:105,extras:['look','put','hat','cane']},{who:'ragazzo',cart:false,speed:240,extras:['grab','sorry','skid']}];
+let CASH=[]; // cassieri: stanno fermi dietro il banco e cambiano posa
+let G,NPC=[],READY=false,CODE={};
+// FILA ALLA BILANCIA: QUEUE[0] è chiamato. Se c'è qualcuno dietro ha WINDOW secondi per presentarsi, poi perde il posto.
+const WINDOW=5,NAME={nonna:'TU',baffi:'Signore',mamma:'Mamma',anziano:'Nonno',ragazzo:'Ragazzo'};let QUEUE=[],QT=WINDOW;
+function book(a){if(!QUEUE.includes(a)){QUEUE.push(a);if(QUEUE.length===1)QT=WINDOW}}
+function leaveQueue(a){const k=QUEUE.indexOf(a);if(k<0)return;QUEUE.splice(k,1);if(k===0)QT=WINDOW}
+function updateQueue(dt){const h=QUEUE[0];if(!h||h.weighing||QUEUE.length<2||(QT-=dt)>0)return;leaveQueue(h);
+  if(h===G){say('Non sei arrivata in tempo: hai perso il posto!',2.2);beep(150,.3,'sawtooth')}else h.scaleCD=rnd(6,12)}
+let qHtml='';function drawQueue(){const h=QUEUE.map((a,k)=>`<li class="${a===G?'me':''} ${k?'':'call'}">${NAME[a.who]}${k?'':a.weighing?' · pesa':QUEUE.length>1?' · '+Math.ceil(QT)+'s':' · tocca'}</li>`).join('')||'<li class="none">nessuno</li>';
+  if(h!==qHtml)$('qlist').innerHTML=qHtml=h;const k=G?QUEUE.indexOf(G):-1,o=$('oro');$('prenota').hidden=k>=0;o.hidden=k<0;if(k<0)return;
+  const red=k===0&&!G.weighing&&QUEUE.length>1,t=G.weighing?'PESI':red?Math.ceil(QT)+'s · VAI!':k===0?'TOCCA A TE':'SEI '+(k+1)+'ª';
+  o.className=red?'red':k===0?'go':'';o.style.setProperty('--p',red?QT/WINDOW:k===0?1:0);if(o.lastChild.textContent!==t)o.lastChild.textContent=t}
+// MACELLERIA: prendi il numeretto, il display chiama MQ[0]. Se c'è gente dietro hai WINDOW secondi per presentarti,
+// altrimenti perdi il turno: nuovo numero e in fondo alla coda. Il macellaio serve in SERVE secondi.
+const SERVE=3;let MQ=[],MT=WINDOW,TICK=1,LAST=0,BUT=null;
+const pad2=n=>String(n).padStart(2,'0');
+function takeTicket(a){if(MQ.includes(a))return;a.ticket=TICK;TICK=TICK%99+1;MQ.push(a);if(MQ.length===1){MT=WINDOW;if(BUT)BUT.callT=1.2}}
+function leaveMac(a){const k=MQ.indexOf(a);if(k<0)return;MQ.splice(k,1);if(k===0){LAST=a.ticket;MT=WINDOW;if(BUT&&MQ.length)BUT.callT=1.2}}
+function updateMac(dt){const h=MQ[0];if(!h||h.serving||MQ.length<2||(MT-=dt)>0)return;leaveMac(h);takeTicket(h);
+  if(h===G){say('Turno perso! Nuovo numero '+pad2(h.ticket)+', in fondo alla coda',2.4);beep(150,.3,'sawtooth')}}
+function updateBut(dt){if(!BUT)return;const s=MQ[0]&&MQ[0].serving?MQ[0]:null;
+  if(s)BUT.pose=s.serveT<1?'give':(s.serveT*3|0)%2?'chop':'idle';
+  else if(BUT.callT>0){BUT.callT-=dt;BUT.pose='call'}else if((BUT.t-=dt)<=0){BUT.pose=Math.random()<.3?'chop':'idle';BUT.t=rnd(1,2.5)}}
+const nearMac=(p,r=120)=>MAC&&Math.hypot(G.x-p[0],(G.y-p[1])*1.3)<r;
+const needMeat=()=>G.list.some(e=>e.n==='CARNE'&&!e.got);
+let mHtml='';function drawMac(){const near=G&&G.state==='play'&&(G.serving||nearMac(MAC.stand,360));$('mcoda').hidden=!near;
+  if(near){const h=MQ.map((a,k)=>`<li class="${a===G?'me':''} ${k?'':'call'}">${pad2(a.ticket)} ${NAME[a.who]}${k?'':a.serving?' · servito':MQ.length>1?' · '+Math.ceil(MT)+'s':''}</li>`).join('')||'<li class="none">nessuno</li>';
+    if(h!==mHtml)$('mlist').innerHTML=mHtml=h;$('mhead').textContent='🥩 MACELLERIA · ORA '+pad2(MQ[0]?MQ[0].ticket:LAST)}
+  const k=G?MQ.indexOf(G):-1,t=$('mturno');t.hidden=k<0||near;if(t.hidden)return;
+  const red=k===0&&!G.serving&&MQ.length>1,txt='🎫 '+pad2(G.ticket)+(k===0?red?' · VAI! '+Math.ceil(MT)+'s':' · TOCCA A TE':' · ora '+pad2(MQ[0].ticket));t.className=red?'red':k===0?'go':'';if(t.textContent!==txt)t.textContent=txt}
+function newActor(who,x,y){return {who,x,y,front:true,flip:false,walk:0,moving:false,rx:26,ry:12}}
+function start(keepLevel){
+  if(!keepLevel)newLevel();
+  const [sx,sy]=iso(...START);
+  const names=[...new Set(SPOTS.map(s=>s.n))];
+  G=Object.assign(newActor('nonna',sx,sy),{state:'play',z:0,vz:0,time:120,bag:[],weighed:[],weighing:false,wasHead:false,msgT:0,front:false,
+    list:[...shuffle(names.filter(n=>FRESH.has(n))).slice(0,3),...shuffle(names.filter(n=>!FRESH.has(n))).slice(0,1),'CARNE'].map(n=>({n,got:false}))});
+  shuffle(G.list);
+  // ogni partita nuovi codici bilancia (2 cifre, tutti diversi): si leggono passando accanto alle cassette
+  const used=new Set();CODE={};for(const n of FRESH){let c;do c=10+ri(90);while(used.has(c));used.add(c);CODE[n]=String(c)}
+  QUEUE=[];QT=WINDOW;$('bil').hidden=true;MQ=[];MT=WINDOW;TICK=1+ri(60);LAST=TICK-1||99;
+  BUT=Object.assign(newActor('macellaio',...MAC.but),{flip:false,pose:'idle',t:1,callT:0});
+  const far=shuffle(NODES.map((p,i)=>i).filter(i=>ADJ[i].length&&Math.hypot(NODES[i][0]-G.x,NODES[i][1]-G.y)>450));
+  NPC=CAST.map((c,k)=>{const [x,y]=NODES[far[(k*7)%far.length]];return Object.assign(newActor(c.who,x,y),c,{rx:c.cart?52:24,ry:c.cart?24:12,path:[],pause:rnd(.2,2),stuck:0})});
+  CASH=MODS.filter(m=>m.type==='cassa').map((m,k)=>{const [x,y]=iso(m.i+1.4,m.j+.5);return Object.assign(newActor('cassieri',x,y),{flip:true,base:k?'m_':'f_',pose:(k?'m_':'f_')+'idle',t:rnd(.5,2)})});
+  $('over').hidden=true;drawList()}
+function drawList(){$('list').innerHTML=G.list.map(e=>`<li class="${e.got?'got':G.bag.includes(e.n)?'hand':''}">${e.n}${FRESH.has(e.n)&&!e.got?' <small>⚖</small>':''}${e.n==='CARNE'&&!e.got?' <small>🎫</small>':''}</li>`).join('')}
+function say(t,d=1.6){G.msgT=d;$('msg').textContent=t;$('msg').hidden=false}
+function end(win){$('bil').hidden=true;G.weighing=false;G.state=win?'win':'lose';G.pose=win?'win':'lose';G.poseT=1e9;$('over').hidden=false;$('over').querySelector('h1').textContent=win?'Spesa fatta!':'Il supermercato chiude!';$('cta').textContent='Tocca PRENDI per un nuovo supermercato';
+  $('overTxt').textContent=win?`Ce l'hai fatta con ${Math.ceil(G.time)} secondi di anticipo.`:`Ti mancavano: ${G.list.filter(e=>!e.got).map(e=>e.n.toLowerCase()).join(', ')}.`}
+const nearScale=(r=110)=>Math.hypot(G.x-SCALE_STAND[0],(G.y-SCALE_STAND[1])*1.3)<r;
+function target(){const [gi,gj]=toTile(G.x,G.y);let best=null,bd=1.25;for(const s of SPOTS){const d=Math.hypot(s.i-gi,s.j-gj);if(d<bd){bd=d;best=s}}return best}
+function pick(){
+  if(!READY)return;
+  if(!G||G.state!=='play'){start(G&&G.state==='title');return}
+  if(G.weighing||G.serving)return;
+  if(nearMac(MAC.disp)&&!MQ.includes(G)){if(!needMeat())return say('La carne non è nella lista');takeTicket(G);act(G,'reach',.4);say('Hai preso il numero '+pad2(G.ticket));return beep(900,.06)}
+  if(MQ.includes(G)&&nearMac(MAC.stand,140)){if(MQ[0]!==G){say('Hai il '+pad2(G.ticket)+': ora servono il '+pad2(MQ[0].ticket));return beep(180,.15,'sawtooth')}
+    G.serving=true;G.serveT=G.serveMax=SERVE;return beep(700,.06)}
+  if(needMeat()&&nearMac(MAC.stand,140))return say('Prima prendi il numero al distributore!');
+  if(G.bag.length&&nearScale()){
+    if(!QUEUE.includes(G))book(G);
+    if(QUEUE[0]===G)return openBil();
+    say('Non è il tuo turno: sei '+(QUEUE.indexOf(G)+1)+'ª in fila');return beep(180,.15,'sawtooth')}
+  const s=target();
+  if(!s){if(G.bag.length)say('Hai verdura da pesare: prenota la bilancia!');return}
+  const e=G.list.find(e=>e.n===s.n);
+  if(!e){G.time-=5;act(G,'lose',.7);say('Non è in lista! -5s');return beep(150,.2,'sawtooth')}
+  if(e.got)return say('Già nel cestino');
+  if(G.bag.includes(e.n))return say('Ce l\'hai già nel sacchetto: va pesata');
+  if(FRESH.has(e.n)){G.bag.push(e.n);act(G,'bend',.45);drawList();say(e.n+' nel sacchetto · codice '+CODE[e.n]);return beep(700,.06)}
+  e.got=true;act(G,G.front?'box':'reach',.5);drawList();say(e.n+' nel cestino!');beep(880);setTimeout(()=>beep(1175),70);checkDone()}
+function act(a,p,t){a.pose=p;a.poseT=t}
+// SPINGI: chi è vicino alla nonna viene allontanato e protesta; poi 5 secondi di ricarica
+const SHOVE_CD=5,SHOVE_R=230,MAD={baffi:'grab',mamma:'scold',anziano:'cane',ragazzo:'trip'};
+function shove(){if(!G||G.state!=='play'||G.shoveT>0||G.weighing||G.serving)return;G.shoveT=SHOVE_CD;let hit=0;
+  for(const n of NPC){if(n.weighing||n.serving)continue;const dx=n.x-G.x,dy=n.y-G.y,d=Math.hypot(dx,dy*1.6);if(d>SHOVE_R)continue;hit++;
+    const k=1/(Math.hypot(dx,dy)||1);n.push={vx:dx*k*650,vy:dy*k*420,t:.3};n.path=[];n.pause=rnd(1.2,2);n.pose=MAD[n.who];n.front=true;n.flip=dx>0}
+  say(hit?'Permesso, permesso!':'Permesso!… ma non c\'è nessuno',1.2);beep(hit?260:200,.1,'square')}
+function checkDone(){if(G.list.every(e=>e.got))setTimeout(()=>G.state==='play'&&say('Ora vai alla cassa!'),1200)}
+function jump(){if(!G||G.state!=='play'||G.z>0||G.weighing||G.serving)return;G.vz=520;G.z=1;beep(520,.07)}
+
+// ---------- comandi
+const stick=$('stick'),knob=$('knob');let sv=[0,0],sid=null;
+function stickAt(e){const r=stick.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),m=Math.hypot(dx,dy),lim=r.width/2-12,k=m>lim?lim/m:1;sv=[dx*k/lim,dy*k/lim];knob.style.transform=`translate(${dx*k}px,${dy*k}px)`}
+stick.addEventListener('pointerdown',e=>{sid=e.pointerId;stick.setPointerCapture(sid);stickAt(e)});
+stick.addEventListener('pointermove',e=>{if(e.pointerId===sid)stickAt(e)});
+const se=e=>{if(e.pointerId===sid){sid=null;sv=[0,0];knob.style.transform=''}};stick.addEventListener('pointerup',se);stick.addEventListener('pointercancel',se);
+$('prendi').addEventListener('pointerdown',e=>{e.preventDefault();pick()});$('salta').addEventListener('pointerdown',e=>{e.preventDefault();jump()});$('spingi').addEventListener('pointerdown',e=>{e.preventDefault();shove()});
+$('over').addEventListener('pointerdown',()=>pick());
+const keys={},KD={ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1],ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0]};
+addEventListener('keydown',e=>{if(G&&G.weighing){if(/^\d$/.test(e.key))key(e.key);else if(e.key==='Enter')key('OK');else if(e.key==='Backspace')key('C');else if(e.key==='Escape')closeBil();return}keys[e.code]=true;if(e.repeat)return;if(e.code==='Space'){e.preventDefault();jump()}if(e.code==='KeyE'||e.code==='Enter')pick();if(e.code==='KeyQ')shove()});
+addEventListener('keyup',e=>keys[e.code]=false);
+function inputVec(){let [a,b]=sv;for(const k in KD)if(keys[k]){a+=KD[k][0];b+=KD[k][1]}const m=Math.hypot(a,b);return m>1?[a/m,b/m]:[a,b]}
+
+// ---------- schermata bilancia: trascini la verdura sul piatto, digiti il codice, OK → 3 s di pesata → a sinistra col prezzo
+const PRICE={MELE:2.2,BANANE:1.9,ARANCE:1.8,POMODORI:2.9,INSALATA:3.5,BROCCOLI:2.6,UVA:3.9,CAVOLI:1.5,CAROTE:1.4},WEIGH=3; // € al kg
+let S={},drag=null;
+const eur=v=>'€ '+v.toFixed(2).replace('.',','),kgs=v=>v.toFixed(3).replace('.',',')+' kg',disp=t=>$('disp').innerHTML=t;
+function icon(n){const c=document.createElement('canvas');c.width=c.height=120;const k=KJ['p:'+n+':0'];if(k){const [sx,sy,sw,sh]=k.r,s=Math.min(110/sw,110/sh);c.getContext('2d').drawImage(kit,sx,sy,sw,sh,60-sw*s/2,60-sh*s/2,sw*s,sh*s)}return c}
+function item(n,sub){const d=document.createElement('div');d.className='it';d.dataset.n=n;d.append(icon(n));d.insertAdjacentHTML('beforeend',`<span>${n}</span>`+(sub?`<small>${sub}</small>`:''));return d}
+function drawBil(){$('todo').replaceChildren(...G.bag.filter(n=>n!==S.plate).map(n=>item(n)));$('plate').replaceChildren(...(S.plate?[item(S.plate)]:[]));
+  $('done').replaceChildren(...G.weighed.map(w=>item(w.n,kgs(w.kg)+'<br>'+eur(w.eur))))}
+function openBil(){G.weighing=true;G.pose='scale';G.poseT=1e9;S={plate:null,code:'',t:0};sv=[0,0];knob.style.transform='';drawBil();disp('METTI SUL<br>PIATTO');$('bil').hidden=false;beep(660,.05)}
+function openCod(){const l=$('codlist');l.innerHTML='';for(const n of [...FRESH].sort()){const d=document.createElement('div');d.className='ci';d.append(icon(n));d.insertAdjacentHTML('beforeend',`<span>${n}</span><b>${CODE[n]}</b>`);l.append(d)}$('cod').hidden=false;beep(600,.04)}
+function closeBil(){if(S.t>0)return;$('bil').hidden=true;$('cod').hidden=true;G.weighing=false;G.pose=null;leaveQueue(G);drawList()}
+function toPlate(n){if(S.t>0)return;S.plate=n;S.code='';drawBil();disp('CODICE?');beep(520,.04)}
+function key(k){if(S.t>0)return;beep(900,.02);
+  if(k==='C'){S.code='';return disp(S.plate?'CODICE?':'METTI SUL<br>PIATTO')}
+  if(k!=='OK'){if(S.code.length<2)S.code+=k;return disp('COD. '+S.code.padEnd(2,'_'))}
+  if(!S.plate)return disp('METTI SUL<br>PIATTO');if(!S.code)return disp('CODICE?');
+  if(S.code!==CODE[S.plate]){const o=Object.keys(CODE).find(n=>CODE[n]===S.code);G.time-=2;disp((o?S.code+' = '+o:'COD. '+S.code+' ?')+'<br>NO! -2s');S.code='';return beep(150,.25,'sawtooth')}
+  S.t=WEIGH;S.kg=rnd(.3,1.6);beep(660,.05)}
+function updBil(dt){if(!(S.t>0))return;S.t-=dt;const f=Math.min(1,1-S.t/WEIGH);$('bar').firstElementChild.style.width=f*100+'%';disp(kgs(S.kg*f+rnd(0,.04)));
+  if(S.t>0)return;S.t=0;const n=S.plate,w={n,kg:S.kg,eur:S.kg*PRICE[n]};G.weighed.push(w);G.bag.splice(G.bag.indexOf(n),1);G.list.find(e=>e.n===n).got=true;S.plate=null;S.code='';
+  disp(kgs(w.kg)+'<br>'+eur(w.eur));$('bar').firstElementChild.style.width='0';drawBil();drawList();beep(988);setTimeout(()=>beep(1319),80);checkDone()}
+// trascinare (o solo toccare) una verdura la mette sul piatto; toccare il piatto la rimette a destra
+const overPlate=e=>{const r=$('plate').getBoundingClientRect();return e.clientX>r.left-20&&e.clientX<r.right+20&&e.clientY>r.top-30&&e.clientY<r.bottom+30};
+const endDrag=(e,place)=>{if(!drag)return;const d=drag;drag=null;$('plate').classList.remove('hot');if(d.el){d.el.remove();d.src.style.opacity=''}if(place&&(!d.el||overPlate(e)))toPlate(d.n)};
+$('todo').addEventListener('pointerdown',e=>{const it=e.target.closest('.it');if(!it||S.t>0)return;e.preventDefault();drag={n:it.dataset.n,x:e.clientX,y:e.clientY,el:null,src:it};$('todo').setPointerCapture(e.pointerId)});
+$('todo').addEventListener('pointermove',e=>{if(!drag)return;if(!drag.el&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>8){drag.el=item(drag.n);drag.el.id='ghost';document.body.append(drag.el);drag.src.style.opacity=.3}
+  if(drag.el){drag.el.style.left=e.clientX+'px';drag.el.style.top=e.clientY+'px';$('plate').classList.toggle('hot',overPlate(e))}});
+$('todo').addEventListener('pointerup',e=>endDrag(e,true));$('todo').addEventListener('pointercancel',e=>endDrag(e,false));
+$('plate').addEventListener('pointerdown',()=>{if(S.plate&&!(S.t>0)){S.plate=null;S.code='';drawBil();disp('METTI SUL<br>PIATTO')}});
+$('pad').addEventListener('pointerdown',e=>{const b=e.target.closest('button');if(b){e.preventDefault();key(b.dataset.k)}});
+$('fatto').addEventListener('pointerdown',e=>{e.preventDefault();closeBil()});
+$('codbtn').addEventListener('pointerdown',e=>{e.preventDefault();openCod()});$('cod').addEventListener('pointerdown',e=>{e.preventDefault();$('cod').hidden=true});
+$('prenota').addEventListener('pointerdown',e=>{e.preventDefault();if(!G||G.state!=='play'||QUEUE.includes(G))return;book(G);if(QUEUE[0]!==G)say('Prenotata: sei '+QUEUE.length+'ª in fila');beep(780,.06)});
+
+// ---------- movimento con ingombri
+function hits(a,x,y){for(const b of (G.state==="title"?NPC:[G,...NPC])){if(b===a||b.ghost>0)continue;const k=((x-b.x)/(a.rx+b.rx))**2+((y-b.y)/(a.ry+b.ry))**2;
+  if(k<1&&k<((a.x-b.x)/(a.rx+b.rx))**2+((a.y-b.y)/(a.ry+b.ry))**2)return b}return null}
+function face(a,vx,vy){if(Math.abs(vy)>Math.abs(vx)*.35)a.front=vy>0;if(Math.abs(vx)>.05)a.flip=vx<0}
+function updateNPC(n,dt){
+  n.moving=false;n.scaleCD=(n.scaleCD||0)-dt;n.macCD=(n.macCD??rnd(5,25))-dt;if(n.ghost>0)n.ghost-=dt;
+  if(n.serving){n.front=false;if((n.serveT-=dt)<=0){n.serving=false;leaveMac(n);n.macCD=rnd(30,45);n.path=[];n.goal=null}return} // servito: se ne va
+  if(n.weighing){n.front=false;if((n.weighT-=dt)<=0){n.weighing=false;leaveQueue(n);n.scaleCD=rnd(20,30);n.path=[];n.goal=null}return} // finita la pesata se ne va
+  if(n.push){const p=n.push,nx=n.x+p.vx*dt,ny=n.y+p.vy*dt;if(walkable(nx,ny))[n.x,n.y]=[nx,ny];if((p.t-=dt)<=0)n.push=null;return}
+  // prenotato: quando tocca a lui o è il prossimo lascia quello che fa e va verso la bilancia
+  // prenotato (bilancia) o col numero (macelleria): quando tocca a lui o è il prossimo lascia quello che fa e ci va
+  const want=()=>{const k=QUEUE.indexOf(n),q=MQ.indexOf(n);return k===0||k===1?'scale':q===0||q===1?'mac':null},w=want();
+  if(n.goal&&n.goal!==w){n.goal=null;n.path=[]}
+  if(w&&!n.goal){n.path=[];n.pause=0;n.pose=null}
+  if(n.pause>0){n.pause-=dt;if(n.pause<=0)n.pose=null;return}
+  if(!n.path.length){
+    if(!QUEUE.includes(n)&&n.scaleCD<=0&&QUEUE.length<4&&Math.random()<(n.cart?.2:.35))book(n);
+    if(!MQ.includes(n)&&n.macCD<=0&&MQ.length<4&&Math.random()<.25)takeTicket(n);
+    const g=want(),dest=g==='scale'?SCALE_NODE:g==='mac'?MAC_NODE:(()=>{let i;do i=Math.random()*NODES.length|0;while(!ADJ[i].length);return i})();
+    n.path=pathTo(nearestNode(n.x,n.y),dest)||[];n.goal=g;n.stuck=0;if(!n.path.length)n.pause=1;return}
+  if(n.goal&&(n.goal==='scale'?QUEUE:MQ)[0]!==n&&n.path.length<=2){n.front=false;return} // il prossimo aspetta a due passi
+  const [tx,ty]=n.path[0],dx=tx-n.x,dy=ty-n.y,d=Math.hypot(dx,dy);
+  if(d<8){n.path.shift();if(!n.path.length){if(n.goal==='scale'&&QUEUE[0]===n){n.weighing=true;n.weighT=n.weighMax=rnd(3,4.5);n.pose=null}
+    else if(n.goal==='mac'&&MQ[0]===n){n.serving=true;n.serveT=n.serveMax=SERVE;n.pose=null}
+    else{n.pause=rnd(1,4);n.front=Math.random()<.5;if(Math.random()<.6){n.pose=n.extras[ri(n.extras.length)];n.front=true}}n.goal=null}return}
+  const sp=Math.min(d,n.speed*dt),nx=n.x+dx/d*sp,ny=n.y+dy/d*sp;
+  // bloccato contro qualcuno: dopo 1,3 s rinuncia e per un attimo passa attraverso gli altri (due clienti faccia a faccia non si sbloccherebbero mai)
+  if(!(n.ghost>0)&&hits(n,nx,ny)){n.stuck+=dt;if(n.stuck>1.3){n.path=[];n.goal=null;n.pause=rnd(.6,1.2);n.ghost=n.pause+1.5;if(PG[n.who+':trip'])n.pose='trip'}return}
+  n.stuck=0;n.x=nx;n.y=ny;n.moving=true;n.walk+=dt*n.speed/30;face(n,dx,dy)}
+function updateCash(c,dt){if((c.t-=dt)>0)return;const near=G&&G.state!=='title'&&Math.hypot(G.x-c.x,G.y-c.y)<420;
+  c.pose=c.base+(near&&c.pose!==c.base+'wave'?'wave':['idle','idle','scan','type'][ri(4)]);c.t=rnd(1.2,2.6)}
+function update(dt){
+  if(!G||G.state!=='play')return;
+  G.time-=dt;if(G.msgT>0&&(G.msgT-=dt)<=0)$('msg').hidden=true;
+  if(G.time<=0){G.time=0;end(false);beep(110,.6,'sawtooth');return}
+  NPC.forEach(n=>updateNPC(n,dt));updateQueue(dt);drawQueue();$('coda').hidden=!(G.weighing||nearScale(330));{const near=!$('coda').hidden;$('turno').hidden=near||!(G.bag.length||QUEUE.includes(G));const p=$('prenota');if(p.parentNode!==(near?$('coda'):$('turno')))near?$('coda').append(p):$('turno').prepend(p)} // vicino: un pannello solo, lista + PRENOTA // lista fila solo a 2-3 caselle dalla bilancia
+  updateMac(dt);drawMac();{const mh=MQ[0]===G;if(mh&&!G.wasMH){say('Numero '+pad2(G.ticket)+'! Tocca a te in macelleria'+(MQ.length>1?': hai 5 secondi':''),2.2);beep(1175,.1);setTimeout(()=>beep(1175,.1),160)}G.wasMH=mh}
+  const head=QUEUE[0]===G;if(head&&!G.wasHead){say(QUEUE.length>1?'Tocca a te! Hai 5 secondi per arrivare alla bilancia':'Tocca a te alla bilancia!',2.2);beep(1046,.1);setTimeout(()=>beep(1046,.1),160)}G.wasHead=head;
+  G.moving=false;if(G.poseT>0&&(G.poseT-=dt)<=0)G.pose=null;if(G.shoveT>0)G.shoveT-=dt;
+  $('spingi').textContent=G.shoveT>0?Math.ceil(G.shoveT)+'s':'SPINGI';$('spingi').classList.toggle('on',!(G.shoveT>0));
+  if(G.weighing){G.front=false;updBil(dt)}
+  else if(G.serving){G.front=false;if((G.serveT-=dt)<=0){G.serving=false;leaveMac(G);const e=G.list.find(e=>e.n==='CARNE');if(e)e.got=true;act(G,'box',.6);drawList();say('Carne nel cestino!');beep(880);setTimeout(()=>beep(1175),70);checkDone()}}
+  else{const [vx,vy]=inputVec(),m=Math.hypot(vx,vy);
+    if(m>.12){const sp=380*dt,nx=G.x+vx*sp,ny=G.y+vy*sp*.75;face(G,vx,vy);
+      if(walkable(nx,G.y)&&!hits(G,nx,G.y))G.x=nx;if(walkable(G.x,ny)&&!hits(G,G.x,ny))G.y=ny;G.walk+=dt*9;G.moving=true}}
+  if(G.z>0){G.vz-=2200*dt;G.z+=G.vz*dt;if(G.z<=0){G.z=0;G.vz=0}}
+  if(CASSE.some(([x,y])=>Math.hypot(G.x-x,(G.y-y)*1.4)<150)){
+    if(G.list.every(e=>e.got)){end(true);[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.12),i*120))}
+    else if(G.bag.length&&G.msgT<=0)say('La cassiera: «Signora, la frutta va pesata!»')}
+  const t=Math.ceil(G.time);$('time').textContent=Math.floor(t/60)+':'+String(t%60).padStart(2,'0');$('time').style.color=t<=10?'#ffd040':'#ff5040';
+  const canWeigh=G.bag.length&&nearScale(),tk=!MQ.includes(G)&&needMeat()&&nearMac(MAC.disp),ord=MQ[0]===G&&nearMac(MAC.stand,140)&&!G.serving;
+  $('prendi').textContent=tk?'NUMERO':ord?'ORDINA':canWeigh?'PESA':'PRENDI';$('prendi').classList.toggle('on',!!(target()||canWeigh||tk||ord));
+}
+
+// ---------- disegno
+const DEBUG=location.hash==='#debug';
+function shadow(x,y,rx,ry){ctx.fillStyle='rgba(40,44,70,.28)';ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,7);ctx.fill()}
+// quale posa mostrare: azione in corso, salto, sacchetto in mano, camminata (avanti o di spalle), ferma
+function frameOf(a){const has=k=>PG[a.who+':'+k];
+  if(a.pose&&has(a.pose))return a.pose;
+  if(a.z>0&&has('jump'))return 'jump';
+  if(a.moving){const cyc=(a.front?['w1','w2','w3','w2']:['b1','b2','b3','b2']).filter(has);if(cyc.length<2)cyc.push(a.front?'idle':'bidle');return cyc[(a.walk|0)%cyc.length]}
+  if(a.bag&&a.bag.length&&has('bag'))return 'bag';
+  return a.front?'idle':has('bidle')?'bidle':'b1'}
+function drawPerson(a){const f=PG[a.who+':'+frameOf(a)],[sx,sy,w,h,ax,ay]=f;
+  ctx.save();ctx.imageSmoothingEnabled=true;ctx.translate(a.x,a.y-(a.z||0));if(a.flip)ctx.scale(-1,1);ctx.drawImage(atlas,sx,sy,w,h,-ax,-ay+4,w,h);ctx.restore();return f}
+// un personaggio dietro a un mobile: ridisegno il mobile sopra di lui, solo nel suo riquadro
+function occlude(a,x0,x1,y0,y1){const [ai,aj]=toTile(a.x,a.y);
+  for(const m of MODS){if(!(ai<m.i+m.w&&aj<m.j+m.d))continue;if(x1<m.bx||x0>m.bx+m.cv.width||y1<m.by||y0>m.by+m.cv.height)continue;
+    ctx.save();ctx.beginPath();ctx.rect(x0,y0,x1-x0,y1-y0);ctx.clip();ctx.drawImage(m.cv,m.bx,m.by);ctx.restore()}}
+function tag(x,y,t,fill='#e8c878'){ctx.font='700 40px "Pixelify Sans",monospace';ctx.textAlign='center';ctx.textBaseline='middle';const w=ctx.measureText(t).width+28;
+  ctx.fillStyle='#1c3a24';ctx.fillRect(x-w/2-4,y-29,w+8,58);ctx.fillStyle=fill;ctx.fillRect(x-w/2,y-25,w,50);ctx.fillStyle='#1c3a24';ctx.fillText(t,x,y+1);ctx.fillRect(x-4,y+25,8,22)}
+function render(now){
+  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#141018';ctx.fillRect(0,0,W,H);
+  if(!READY)return;
+  const fx=G?G.x:BW/2,fyy=G?G.y:BH/2;
+  const z=DEBUG?Math.min(W/BW,H/BH):Math.max(H/820,W/1750),vw=W/z,vh=H/z;
+  const cx=Math.max(0,Math.min(BW-vw,fx-vw/2)),cy=Math.max(0,Math.min(BH-vh,fyy-120-vh/2));
+  ctx.setTransform(z,0,0,z,-cx*z,-cy*z);ctx.drawImage(STAGE,0,0);ctx.imageSmoothingEnabled=false;
+  const actors=[...(G&&G.state!=='title'?[G,...NPC]:NPC),...CASH,...(BUT?[BUT]:[])].sort((p,q)=>p.y-q.y);
+  for(const a of actors){
+    if(a.who!=='cassieri'&&a.who!=='macellaio')shadow(a.x,a.y+2,a.cart?62:38,a.cart?18:11);
+    const [,,w,h,ax]=drawPerson(a),half=Math.max(ax,w-ax)+4;
+    occlude(a,a.x-half,a.x+half,a.y-(a.z||0)-h-4,a.y+8);
+    if(a===G){ctx.globalAlpha=.4;drawPerson(a);ctx.globalAlpha=1} // la nonna dietro un mobile si vede in trasparenza
+    if(a===G&&G.bag.length){const t=G.bag.length>1?G.bag.length+' DA PESARE':G.bag[0];ctx.font='700 28px "Pixelify Sans",monospace';ctx.textAlign='center';ctx.textBaseline='middle';const w=ctx.measureText(t).width+20;
+      ctx.fillStyle='#2b1d1f';ctx.fillRect(a.x-w/2-3,a.y-262,w+6,40);ctx.fillStyle='#f8f8f4';ctx.fillRect(a.x-w/2,a.y-259,w,34);ctx.fillStyle='#a0307a';ctx.fillText(t,a.x,a.y-241)}
+  }
+  if(G&&G.state==='play'){
+    if(G.bag.length&&!nearScale()){const b=Math.sin(now/180)*8;tag(SCALE.x,SCALE.y-255+b,QUEUE[0]===G?'⚖ TOCCA A TE':'⚖ BILANCIA',QUEUE[0]===G?'#ffe6a0':'#a8e4b4')}
+    const s=G.weighing||(G.bag.length&&nearScale())?null:target();if(s){const [x,y]=iso(s.i,s.j,s.m.labelH||150);tag(x,y,FRESH.has(s.n)?s.n+' · '+CODE[s.n]:s.n,FRESH.has(s.n)?'#a8e4b4':'#e8c878')}
+    if(G.bag.length&&nearScale()&&!G.weighing){const me=QUEUE[0]===G,k=QUEUE.indexOf(G);tag(SCALE.x,SCALE.y-245,me?'PESA QUI':k>0?'SEI '+(k+1)+'ª':'PRENOTA',me?'#a8e4b4':'#f0c0a0')}}
+  // display della macelleria: numero chiamato in rosso, lampeggia mentre scadono i 5 s
+  if(MAC&&MAC.m.disp){const [x,y]=MAC.m.disp,h=MQ[0],blink=h&&!h.serving&&MQ.length>1&&(now/250|0)%2;skewText(ctx,pad2(h?h.ticket:LAST),x,y,true,34,blink?'#ffd040':'#ff3a2a')}
+  if(G&&G.state==='play'&&MAC){const has=MQ.includes(G),b=Math.sin(now/180)*8;
+    if(needMeat()&&!has&&nearMac(MAC.disp,330)&&!nearMac(MAC.disp))tag(MAC.disp[0],MAC.disp[1]-175+b,'🎫 NUMERO','#f0c0a0');
+    if(MQ[0]===G&&!G.serving)tag(MAC.stand[0],MAC.stand[1]-200+b,nearMac(MAC.stand,140)?'ORDINA QUI':'🥩 TOCCA A TE','#ffe6a0')}
+  for(const a of [G,...NPC])if(a&&a.serving){const y=a.y-PG[a.who+':'+frameOf(a)][3]-24;ctx.fillStyle='#3a1c1c';ctx.fillRect(a.x-48,y,96,20);ctx.fillStyle='#ff8a7a';ctx.fillRect(a.x-44,y+4,88*(1-a.serveT/a.serveMax),12)}
+  for(const a of NPC)if(a.weighing){const y=a.y-PG[a.who+':'+frameOf(a)][3]-24;ctx.fillStyle='#1c3a24';ctx.fillRect(a.x-48,y,96,20);ctx.fillStyle='#7cf08a';ctx.fillRect(a.x-44,y+4,88*(1-a.weighT/a.weighMax),12)} // barra della pesata sopra la testa, sopra a tutto
+  // orologio sopra la bilancia: verde se il primo della fila può andare con calma, rosso che si svuota nei 5s se c'è gente dietro
+  {const h=QUEUE[0];if(h&&!h.weighing){const red=QUEUE.length>1,f=red?QT/WINDOW:1,r=50*(red?1+.08*Math.abs(Math.sin(now/150)):1),x=SCALE.x+(G.bag.length&&!G.weighing?215:0),y=SCALE.y-255; // accanto all'etichetta BILANCIA se c'è, sennò al suo posto
+    ctx.fillStyle='#fff';ctx.strokeStyle='#2a2430';ctx.lineWidth=6;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();
+    ctx.fillStyle=red?'#e03030':'#5ac070';ctx.beginPath();ctx.moveTo(x,y);ctx.arc(x,y,r,-Math.PI/2,-Math.PI/2+f*2*Math.PI);ctx.fill();ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.stroke();
+    ctx.font='700 44px "Pixelify Sans",monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=5;const t=red?String(Math.ceil(QT)):h===G?'TU':'✓';ctx.strokeText(t,x,y+1);ctx.fillStyle='#fff';ctx.fillText(t,x,y+1)}}
+  if(DEBUG){ctx.fillStyle='rgba(255,0,0,.25)';for(let i=0;i<R;i++)for(let j=0;j<C;j++)if(!free(i,j))poly(ctx,[iso(i,j),iso(i+1,j),iso(i+1,j+1),iso(i,j+1)],'rgba(255,0,0,.25)');
+    ctx.strokeStyle='rgba(255,0,255,.5)';ctx.lineWidth=2;NODES.forEach((a,i)=>ADJ[i].forEach(j=>{if(j>i){ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...NODES[j]);ctx.stroke()}}))}
+}
+Promise.all([...[atlas,kit].map(im=>new Promise(r=>im.complete&&im.naturalWidth?r():im.onload=r)),document.fonts.load('700 26px "Pixelify Sans"').catch(()=>{})]).then(()=>{
+  start(false);G.state='title';$('over').hidden=DEBUG;READY=true}); // i clienti girano già dietro la schermata iniziale
+let last=performance.now();function loop(t){const dt=Math.min(.05,(t-last)/1000);last=t;
+  if(G&&G.state!=='play')NPC.forEach(n=>updateNPC(n,dt));CASH.forEach(c=>updateCash(c,dt));
+  if(G&&G.state!=='play'){updateQueue(dt);drawQueue();updateMac(dt)}updateBut(dt);update(dt);render(t);requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script>

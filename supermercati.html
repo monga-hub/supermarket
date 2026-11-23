@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cinque Supermercati</title>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0e0c12;display:grid;place-items:center;min-height:100vh}
+canvas{width:min(96vw,1440px);image-rendering:pixelated;display:block}
+</style></head><body>
+<canvas id="c" width="480" height="300"></canvas>
+<script>
+const PAL={k:'#1a1020',w:'#ffffff',G:'#e4e4f0',g:'#a8a8c0',s:'#f8c8a0',S:'#d89070',P:'#b070e0',p:'#7c44b8',q:'#4c2078',c:'#f0e8d0',b:'#5a3418'};
+const GR=["......kkkk......",".....kGGGgk.....",".....kgGggk.....","....kkkkkkkk....","...kGGGGGGGGk...","..kGGGGGGGGGgk..","..kGgssssssgGk..","..ksssssssssSk..","..kskkkskkksSk..","..kskwkskwksSk..","..ksssssssssSk..","...kssSkkSssSk..","....kkSSSSSSkk..","...kcckPPkcck...","..kPPPPPPPPPPpk.",".kPPPPwPPPPPppk.",".ksPPPPwPPPPpsk.",".kssPPPPPPPpssk.","..kkpPPPPPPpkk..","...kpPPPPPPpk...","...kqppppppqk...","....kkkkkkkk....","....kbbk.kbbk...","....kkkk.kkkk..."];
+const cv=document.getElementById('c'),x=cv.getContext('2d');
+const OX=208,OY=72,Q=(i,j,z=0)=>[OX+(i-j)*16,OY+(i+j)*8-z];
+const hash=(a,b,c=0)=>{const s=Math.sin(a*127.1+b*311.7+c*74.7)*43758.5453;return s-Math.floor(s)};
+const rect=(a,b,w,h,f)=>{x.fillStyle=f;x.fillRect(Math.round(a),Math.round(b),w,h)};
+function poly(pts,f,st){x.beginPath();pts.forEach(([a,b],n)=>n?x.lineTo(a,b):x.moveTo(a,b));x.closePath();x.fillStyle=f;x.fill();if(st){x.strokeStyle=st;x.lineWidth=1;x.stroke()}}
+function line(a,b,col,w=1){x.strokeStyle=col;x.lineWidth=w;x.beginPath();x.moveTo(...a);x.lineTo(...b);x.stroke()}
+const EDGE='rgba(20,12,24,.5)';
+function box(i,j,di,dj,z0,z1,top,L,R,edge=EDGE){
+  poly([Q(i,j+dj,z0),Q(i+di,j+dj,z0),Q(i+di,j+dj,z1),Q(i,j+dj,z1)],L,edge);
+  poly([Q(i+di,j,z0),Q(i+di,j+dj,z0),Q(i+di,j+dj,z1),Q(i+di,j,z1)],R,edge);
+  poly([Q(i,j,z1),Q(i+di,j,z1),Q(i+di,j+dj,z1),Q(i,j+dj,z1)],top,edge)}
+const scache={};
+function chr(gi,gj,swap={},o={}){
+  const key=JSON.stringify(swap)+!!o.flip;let c=scache[key];
+  if(!c){c=scache[key]=document.createElement('canvas');c.width=16;c.height=24;const g=c.getContext('2d');GR.forEach((r,j)=>[...r].forEach((ch,i)=>{if(ch!=='.'){g.fillStyle=swap[ch]||PAL[ch];g.fillRect(o.flip?15-i:i,j,1,1)}}))}
+  const [a,b]=Q(gi,gj);x.fillStyle='rgba(20,10,30,.28)';x.beginPath();x.ellipse(a,b,7,2.5,0,0,7);x.fill();
+  if(o.cart&&!o.flip)cart(a-17,b);
+  x.drawImage(c,Math.round(a-8),Math.round(b-23));
+  if(o.cart&&o.flip)cart(a+5,b);
+  if(o.ticket)rect(a+5,b-12,3,4,'#fff');
+  if(o.basket){rect(a+5,b-12,7,5,'#1a1020');rect(a+6,b-11,5,3,'#d8a040');rect(a+6,b-13,1,2,'#1a1020');rect(a+10,b-13,1,2,'#1a1020');rect(a+7,b-13,3,1,'#1a1020')}
+}
+function cart(a,b){rect(a,b-12,13,8,'#56606e');rect(a+1,b-11,11,6,'#c8d0dc');for(let k=a+3;k<a+12;k+=3)rect(k,b-11,1,6,'#8a94a4');rect(a+1,b-9,11,1,'#8a94a4');
+  rect(a+2,b-4,1,3,'#56606e');rect(a+10,b-4,1,3,'#56606e');rect(a+1,b-1,3,1,'#222');rect(a+9,b-1,3,1,'#222');
+  rect(a+3,b-10,3,3,'#e8c040');rect(a+7,b-11,3,4,'#3870d8')}
+
+// ---------- prodotti sugli scaffali
+const STY={
+ pasta:{w:4,h:[6,7],cols:['#2c5cc8','#f0c030','#2c5cc8','#e8e8f0','#d83030']},
+ bevande:{w:2,h:[8,9],cols:['#e83030','#40a0e0','#f08020','#40c060','#a0d8f0'],cap:'#f4f4f4'},
+ colazione:{w:4,h:[6,8],cols:['#f0a040','#c83060','#f0e070','#60a040','#8050c0']},
+ conserve:{w:3,h:[4,5],cols:['#c83030','#e8c040','#30a050'],cap:'#b8b8c0'},
+ detersivi:{w:3,h:[7,8],cols:['#40c0e0','#f8f8f8','#e060a0','#60d060','#f0d020'],cap:'#2050a0'},
+ vino:{w:2,h:[9,9],cols:['#1c4a24','#4a1018','#2a5a30','#601828'],cap:'#c8a040',label:'#f0e8d0'},
+ latticini:{w:2,h:[5,7],cols:['#f8f8f8','#f8f8f8','#a0d0f0','#f0d040'],cap:'#3870d8'},
+ yogurt:{w:2,h:[3,4],cols:['#f8f8f8','#f0a0c0','#a0e0a0','#f8e080','#c0a0f0']},
+ formaggi:{w:4,h:[3,5],cols:['#f8d860','#f0e8b0','#e8b040','#fff4d0']},
+ salumi:{w:4,h:[3,4],cols:['#e07080','#c84050','#f0a0a0','#a83040']},
+ olio:{w:2,h:[8,9],cols:['#b8b020','#6a8a20','#d0c040'],cap:'#1a1020',label:'#f0e8d0'},
+ caffe:{w:3,h:[5,6],cols:['#5a3418','#c83030','#1a1020','#e8c040']},
+ pane:{w:4,h:[3,4],cols:['#e0a050','#c88838','#f0c070']},
+ dolci:{w:4,h:[5,7],cols:['#e85890','#f0d060','#8060d0','#58c0d0','#f08040']},
+ surgelati:{w:4,h:[5,6],cols:['#e8f0f8','#40a0e0','#f0c040','#e05050']},
+};
+function prod(X,Y,w,h,col,st){X=Math.round(X);Y=Math.round(Y);rect(X,Y-h,w,h,col);
+  if(st.cap)rect(X,Y-h,w,1,st.cap);if(st.label)rect(X,Y-h+4,w,2,st.label);
+  rect(X,Y-h+(st.cap?1:0),1,h-(st.cap?1:0),'rgba(255,255,255,.28)');if(w>2)rect(X+w-1,Y-h,1,h,'rgba(0,0,0,.22)')}
+function stock(i,j,face,levels,style,seed=0,strip='#f0d040'){
+  const st=STY[style];
+  levels.forEach((z,l)=>{
+    const A=face==='j'?Q(i,j+1,z):Q(i+1,j,z),B=face==='j'?Q(i+1,j+1,z):Q(i+1,j+1,z);
+    let t=1,k=0;while(t+st.w<=15){const g=Math.floor(k/3),col=st.cols[Math.floor(hash(i*3+g,j*5+l,seed)*st.cols.length)],h=st.h[0]+Math.floor(hash(i+g,j+l,seed+1)*(st.h[1]-st.h[0]+1));
+      if(face==='j')prod(A[0]+t,A[1]+t*.5,st.w,h,col,st);else prod(A[0]-t-st.w,A[1]+t*.5+st.w*.5,st.w,h,col,st);t+=st.w;k++}
+    line(A,B,strip);line([A[0],A[1]+1],[B[0],B[1]+1],'rgba(0,0,0,.35)');
+  })}
+
+// ---------- arredi
+function gondola(i,j,style,T,seed=0){
+  box(i,j,1,1,0,34,T.shelf.top,T.shelf.back,T.shelf.back2);
+  stock(i,j,'j',[3,12,21,30],style,seed,T.shelf.strip);stock(i,j,'i',[3,12,21,30],style,seed+7,T.shelf.strip);
+  line(Q(i,j+1,0),Q(i,j+1,34),T.shelf.post);line(Q(i+1,j+1,0),Q(i+1,j+1,34),T.shelf.post);
+  if(hash(i,j,seed+3)>.72)box(i+.2,j+.2,.5,.5,34,40,'#c89858','#b08048','#987038');
+}
+function fridge(i,j,style,T,seed=0){
+  box(i,j,1,1,0,42,T.fridge.top,'#e8f4fc','#d4e8f4');
+  stock(i,j,'j',[3,12,21,30],style,seed,'#b8c4d0');stock(i,j,'i',[3,12,21,30],style,seed+5,'#b8c4d0');
+  for(const f of ['j','i']){const P=f==='j'?[Q(i,j+1,0),Q(i+1,j+1,0),Q(i+1,j+1,37),Q(i,j+1,37)]:[Q(i+1,j,0),Q(i+1,j+1,0),Q(i+1,j+1,37),Q(i+1,j,37)];
+    poly(P,'rgba(190,225,255,.16)');
+    const [a,b]=f==='j'?[Q(i+.3,j+1,6),Q(i+.6,j+1,32)]:[Q(i+1,j+.6,6),Q(i+1,j+.3,32)];line(a,b,'rgba(255,255,255,.45)');
+    for(const t of [0,.5,1]){const p=f==='j'?i+t:j+t;line(f==='j'?Q(p,j+1,0):Q(i+1,p,0),f==='j'?Q(p,j+1,38):Q(i+1,p,38),T.fridge.frame)}}
+  poly([Q(i,j+1,37),Q(i+1,j+1,37),Q(i+1,j+1,42),Q(i,j+1,42)],T.fridge.band,EDGE);poly([Q(i+1,j,37),Q(i+1,j+1,37),Q(i+1,j+1,42),Q(i+1,j,42)],T.fridge.band2,EDGE);
+}
+function freezer(i,j,T){
+  box(i,j,1,1,0,13,'#1c3a68','#eef2f8','#cdd8e6');line(Q(i,j+1,9),Q(i+1,j+1,9),T.fridge.band);line(Q(i+1,j,9),Q(i+1,j+1,9),T.fridge.band);
+  for(let u=.12;u<.9;u+=.19)for(let v=.12;v<.9;v+=.19){const [a,b]=Q(i+u,j+v,13);const col=STY.surgelati.cols[Math.floor(hash(u*7+i,v*7+j)*4)];rect(a-2,b-2,5,3,col);rect(a-2,b-2,5,1,'rgba(255,255,255,.5)')}
+  poly([Q(i,j,13),Q(i+1,j,13),Q(i+1,j+1,13),Q(i,j+1,13)],'rgba(200,230,255,.22)','rgba(255,255,255,.6)');
+}
+const FRUIT={
+ mele:{c:['#d82828','#ff8080','#8a1818'],s:.12},
+ mele_verdi:{c:['#88c838','#d0f080','#4a7a18'],s:.12},
+ arance:{c:['#f08820','#ffc070','#b05810'],s:.12},
+ limoni:{c:['#f8e040','#fff8a0','#c0a010'],s:.12},
+ pere:{c:['#c0d040','#f0f8a0','#708020'],s:.12},
+ pomodori:{c:['#e83020','#ff9070','#901808'],s:.11,leaf:'#3a8a28'},
+ banane:{c:['#f8d838','#fff090','#8a6010'],s:.16,long:1},
+ insalata:{c:['#58b838','#a8e878','#2c7020'],s:.2,big:1},
+ uva:{c:['#6a2c8a','#b070d0','#3c1450'],s:.13},
+ melanzane:{c:['#4a1c5a','#8a50a0','#28102c'],s:.15,long:1},
+ carote:{c:['#f07820','#ffb060','#a04808'],s:.15,long:1,leaf:'#48a030'},
+ peperoni:{c:['#e8c020','#fff070','#a07808'],s:.14},
+ zucchine:{c:['#3a7a28','#78b858','#1c4a14'],s:.15,long:1},
+ fragole:{c:['#e82848','#ff8098','#981028'],s:.1,leaf:'#3a8a28'},
+};
+function fruit(X,Y,F,r){X=Math.round(X);Y=Math.round(Y);const [m,h,d]=F.c;
+  if(F.big){rect(X-2,Y-2,5,3,m);rect(X-1,Y-3,3,1,h);rect(X-2,Y,5,1,d);rect(X,Y-2,1,1,h);return}
+  if(F.long){rect(X-2,Y-1,4,2,m);rect(X-2,Y-1,3,1,h);rect(X+1,Y,1,1,d);if(F.leaf)rect(X+2,Y-1,1,1,F.leaf);return}
+  rect(X-1,Y-2,3,3,m);rect(X-1,Y-2,1,1,h);rect(X+1,Y,1,1,d);if(F.leaf)rect(X,Y-3,1,1,F.leaf)}
+function crate(i,j,type,T,tag=true){
+  box(i,j,1,1,0,5,T.stand.top,T.stand.L,T.stand.R);
+  box(i+.07,j+.07,.86,.86,5,12,T.crate.in,T.crate.L,T.crate.R);
+  line(Q(i+.07,j+.93,9),Q(i+.93,j+.93,9),T.crate.slat);line(Q(i+.93,j+.07,9),Q(i+.93,j+.93,9),T.crate.slat);
+  const F=FRUIT[type],pts=[];for(let u=.13;u<.9;u+=F.s)for(let v=.13;v<.9;v+=F.s)pts.push([u,v]);
+  pts.sort((a,b)=>a[0]+a[1]-b[0]-b[1]).forEach(([u,v])=>{const [a,b]=Q(i+u,j+v,11+3.5*Math.sin(Math.PI*u)*Math.sin(Math.PI*v));fruit(a,b,F,hash(u,v))});
+  if(tag&&hash(i,j,9)>.45){const [a,b]=Q(i+.85,j+.95,13);rect(a,b-8,1,8,'#5a3418');rect(a-3,b-13,9,6,T.tag);rect(a-2,b-12,7,1,T.tagInk);rect(a-2,b-10,4,1,T.tagInk)}
+}
+function breadStand(i,j,T){box(i,j,1,1,0,5,T.stand.top,T.stand.L,T.stand.R);box(i+.07,j+.07,.86,.86,5,11,'#7a4a20','#c89858','#a87838');
+  for(let u=.15;u<.9;u+=.17)for(let v=.15;v<.9;v+=.17){const [a,b]=Q(i+u,j+v,11+2*Math.sin(Math.PI*u));rect(a-3,b-2,6,3,'#d8903c');rect(a-2,b-3,4,1,'#f0c070');rect(a-1,b-2,1,1,'#f8e0a0');rect(a+1,b-2,1,1,'#f8e0a0')}}
+function butcher(i,j,T){
+  box(i,j,1,1,0,12,'#c8ccd4',T.counter.L,T.counter.R);line(Q(i,j+1,4),Q(i+1,j+1,4),T.counter.stripe,2);line(Q(i+1,j,4),Q(i+1,j+1,4),T.counter.stripe,2);
+  for(let u=.08;u<.9;u+=.42)for(let v=.08;v<.9;v+=.42){poly([Q(i+u,j+v,12),Q(i+u+.36,j+v,12),Q(i+u+.36,j+v+.36,12),Q(i+u,j+v+.36,12)],'#f4f4f8');
+    const kind=Math.floor(hash(i+u,j+v,4)*4);
+    for(let a=.08;a<.32;a+=.1)for(let b=.08;b<.32;b+=.1){const [X,Y]=Q(i+u+a,j+v+b,12);
+      if(kind===0){rect(X-2,Y-1,4,2,'#c83040');rect(X-2,Y-1,4,1,'#f0c8c0')}
+      else if(kind===1){rect(X-1,Y-1,2,2,'#a85a30');rect(X-1,Y-1,1,1,'#d88a58')}
+      else if(kind===2){rect(X-2,Y-2,4,3,'#f0c888');rect(X-1,Y-2,2,1,'#fff0c8')}
+      else {rect(X-2,Y-1,4,2,'#d04858');rect(X-1,Y-1,1,1,'#f08898')}}}
+  poly([Q(i,j+1,12),Q(i+1,j+1,12),Q(i+1,j+.55,21),Q(i,j+.55,21)],'rgba(200,232,255,.24)');line(Q(i,j+.55,21),Q(i+1,j+.55,21),'rgba(255,255,255,.7)');
+  poly([Q(i+1,j,12),Q(i+1,j+1,12),Q(i+.55,j+1,21),Q(i+.55,j,21)],'rgba(200,232,255,.0)');
+}
+function checkout(i,j,T){
+  box(i,j,1,1,0,10,'#2a2a32',T.check.L,T.check.R);
+  for(let t=.1;t<.9;t+=.15)line(Q(i+t,j+.15,10),Q(i+t,j+.85,10),'#40404a');
+  box(i+.6,j+.1,.35,.35,10,17,'#3a3a44','#4a4a56','#30303a');const [a,b]=Q(i+.78,j+.28,17);rect(a-3,b-5,6,4,'#1a1020');rect(a-2,b-4,4,2,'#48e078');
+  const [p,q]=Q(i+.95,j+.05,10);rect(p,q-26,1,26,'#56606e');rect(p-3,q-32,7,7,T.check.lamp);rect(p-2,q-31,5,5,'#fff6c0');
+}
+function dispenser(gi,gj,T){const [a,b]=Q(gi,gj);x.fillStyle='rgba(20,10,30,.28)';x.beginPath();x.ellipse(a,b,4,1.5,0,0,7);x.fill();
+  rect(a-1,b-22,2,22,'#8a8a96');rect(a-4,b-30,8,9,'#d82828');rect(a-3,b-29,6,1,'#ff7070');rect(a-1,b-24,3,4,'#ffffff')}
+function wallSign(i,j,z,text,bg,fg,size=8){x.font=size+'px Silkscreen';const w=Math.round(x.measureText(text).width+8),[a,b]=Q(i,j,z);
+  rect(a-w/2-1,b-1,w+2,size+6,'#1a1020');rect(a-w/2,b,w,size+4,bg);rect(a-w/2,b,w,1,'rgba(255,255,255,.35)');x.fillStyle=fg;x.textAlign='center';x.textBaseline='top';x.fillText(text,a,b+2)}
+function hangSign(i,j,text,T){x.font='8px Silkscreen';const w=Math.round(x.measureText(text).width+8),[a,b]=Q(i,j,62);
+  rect(a-w/2+3,b-10,1,10,T.sign.wire);rect(a+w/2-4,b-10,1,10,T.sign.wire);rect(a-w/2-1,b-1,w+2,13,'#1a1020');rect(a-w/2,b,w,11,T.sign.bg);rect(a-w/2,b,w,1,'rgba(255,255,255,.35)');
+  x.fillStyle=T.sign.fg;x.textAlign='center';x.textBaseline='top';x.fillText(text,a,b+2)}
+function numberBoard(i,j,z,n){const [a,b]=Q(i,j,z);rect(a-16,b,32,19,'#1a1020');rect(a-15,b+1,30,17,'#2a0c10');x.textAlign='center';x.textBaseline='top';
+  x.font='8px Silkscreen';x.fillStyle='#ff9090';x.fillText('TURNO',a,b+1);x.font='8px Silkscreen';x.fillStyle='#ff3030';x.fillText(String(n),a,b+9)}
+
+// ---------- muri e pavimento
+function walls(T){
+  for(let j=11;j>=1;j--)box(0,j,1,1,0,64,T.wall.top,T.wall.a,T.wall.a);
+  for(let i=0;i<16;i++)box(i,0,1,1,0,64,T.wall.top,T.wall.b,T.wall.b);
+  poly([Q(1,1,0),Q(1,12,0),Q(1,12,20),Q(1,1,20)],T.wall.lowA,EDGE);poly([Q(1,1,0),Q(16,1,0),Q(16,1,20),Q(1,1,20)],T.wall.lowB,EDGE);
+  if(T.wall.tile)for(let z=5;z<20;z+=5){line(Q(1,1,z),Q(1,12,z),T.wall.tile);line(Q(1,1,z),Q(16,1,z),T.wall.tile)}
+  line(Q(1,1,20),Q(1,12,20),T.wall.trim,2);line(Q(1,1,20),Q(16,1,20),T.wall.trim,2);
+  line(Q(1,1,60),Q(1,12,60),T.wall.trim,2);line(Q(1,1,60),Q(16,1,60),T.wall.trim,2);
+}
+function floor(T){for(let j=1;j<12;j++)for(let i=1;i<16;i++){poly([Q(i,j),Q(i+1,j),Q(i+1,j+1),Q(i,j+1)],T.floor(i,j),T.floorEdge);
+  if(T.planks){line(Q(i,j+.33),Q(i+1,j+.33),T.floorEdge);line(Q(i,j+.66),Q(i+1,j+.66),T.floorEdge)}}
+  for(let j=2;j<12;j+=3)for(let i=2;i<16;i+=3){const [a,b]=Q(i+.5,j+.5);x.fillStyle='rgba(255,255,240,.10)';x.beginPath();x.ellipse(a,b,20,9,0,0,7);x.fill()}}
+
+// ---------- cinque supermercati
+const C1={G:'#6a3c1c',g:'#4a2810',P:'#3870d8',p:'#2850a0',q:'#183470',w:'#f0e060'},C2={G:'#f0d060',g:'#c0a030',P:'#e05050',p:'#a83030',q:'#701818',w:'#fff'},
+ C3={G:'#2a2030',g:'#1a1020',P:'#48a860',p:'#307040',q:'#1c4828',w:'#fff'},C4={G:'#c0c0d0',g:'#8888a0',P:'#d89040',p:'#a06020',q:'#704010',w:'#fff'},
+ BUT={G:'#ffffff',g:'#d0d0dc',P:'#f8f8fc',p:'#d0d0dc',q:'#a8a8b8',c:'#e04040',w:'#e04040'};
+const THEMES=[
+{name:'SuperCasa',sub:'classico anni 90',
+ floor:(i,j)=>(i+j)%2?'#eef0f4':'#d6dbe6',floorEdge:'rgba(150,160,180,.35)',
+ wall:{a:'#f4f4f8',b:'#e8ecf4',top:'#9098b0',lowA:'#3870d8',lowB:'#2c60c0',tile:'rgba(255,255,255,.25)',trim:'#d83030'},
+ shelf:{top:'#c8d0e0',back:'#5a6278',back2:'#4a5268',strip:'#f8d038',post:'#8a94b0'},
+ fridge:{top:'#b8c4d4',frame:'#7a8698',band:'#d83030',band2:'#a82020'},
+ stand:{top:'#3a7a38',L:'#2c6a2c',R:'#205a22'},crate:{in:'#6a4420',L:'#c08848',R:'#a06830',slat:'#7a5028'},tag:'#1a1a1a',tagInk:'#ffffff',
+ counter:{L:'#f4f4f8',R:'#dcdce4',stripe:'#d83030'},check:{L:'#3870d8',R:'#2850a0',lamp:'#d83030'},
+ sign:{bg:'#d83030',fg:'#fff',wire:'#56606e'},wsign:['#2c60c0','#fff'],
+ aisles:[['pasta','PASTA'],['bevande','BEVANDE'],['colazione','COLAZIONE']],fridges:['latticini','latticini','yogurt','yogurt','formaggi','formaggi','salumi','salumi'],
+ fruits:['mele','arance','banane','limoni','insalata','pomodori','pere','uva','carote','mele_verdi'],extra:'none'},
+{name:'Mercato Verde',sub:'bio e km zero',
+ floor:(i,j)=>['#c89868','#b88858','#d0a070'][(i*2+j)%3],floorEdge:'rgba(90,60,30,.35)',planks:1,
+ wall:{a:'#a8c098',b:'#98b088',top:'#5a6a4a',lowA:'#7a5a38',lowB:'#6a4a2c',tile:'rgba(0,0,0,.12)',trim:'#3a4a2c'},
+ shelf:{top:'#b88850',back:'#5a3c20',back2:'#4a3018',strip:'#2c3a24',post:'#3a2814'},
+ fridge:{top:'#8a9a7a',frame:'#4a5a3a',band:'#3a4a2c',band2:'#2a3820'},
+ stand:{top:'#8a6038',L:'#7a5028',R:'#6a4420'},crate:{in:'#5a3818',L:'#c89858',R:'#a87838',slat:'#7a5028'},tag:'#20281c',tagInk:'#f0f0e0',
+ counter:{L:'#e8e0d0',R:'#d0c8b8',stripe:'#3a6a2c'},check:{L:'#7a5a38',R:'#5a4028',lamp:'#58a038'},
+ sign:{bg:'#20281c',fg:'#f0f0e0',wire:'#3a2814'},wsign:['#20281c','#f0f0e0'],
+ aisles:[['olio','OLIO E SUGHI'],['pane','FORNO'],['conserve','CONSERVE']],fridges:['latticini','formaggi','formaggi','yogurt','salumi','salumi','latticini','yogurt'],
+ fruits:['mele','insalata','carote','pomodori','zucchine','melanzane','fragole','peperoni','pere','arance','uva','limoni'],extra:'bio'},
+{name:'Iper Citta',sub:'ipermercato moderno',
+ floor:(i,j)=>hash(i,j)>.5?'#b4b8c0':'#aeb2ba',floorEdge:'rgba(255,255,255,.25)',
+ wall:{a:'#3a3e48',b:'#30343e',top:'#1c1e24',lowA:'#f0c020',lowB:'#d8aa10',tile:null,trim:'#f0c020'},
+ shelf:{top:'#3a3e48',back:'#24262c',back2:'#1c1e24',strip:'#f0c020',post:'#5a5e68'},
+ fridge:{top:'#3a3e48',frame:'#5a5e68',band:'#f0c020',band2:'#c8a010'},
+ stand:{top:'#24262c',L:'#3a3e48',R:'#30343e'},crate:{in:'#3a3e48',L:'#5a6068',R:'#4a5058',slat:'#2a2e34'},tag:'#f0c020',tagInk:'#1a1020',
+ counter:{L:'#3a3e48',R:'#30343e',stripe:'#f0c020'},check:{L:'#3a3e48',R:'#2a2e34',lamp:'#f0c020'},
+ sign:{bg:'#f0c020',fg:'#1a1020',wire:'#5a5e68'},wsign:['#f0c020','#1a1020'],
+ aisles:[['detersivi','CASA'],['bevande','BEVANDE'],['dolci','DOLCI'],['caffe','CAFFE']],fridges:['latticini','yogurt','latticini','yogurt','salumi','formaggi','bevande','bevande'],
+ fruits:['banane','mele','arance','limoni','pomodori','peperoni','mele_verdi','uva'],extra:'iper'},
+{name:'Alimentari Zeno',sub:'bottega di paese',
+ floor:(i,j)=>(i+j)%2?'#c8704a':'#b8603c',floorEdge:'rgba(90,40,20,.35)',
+ wall:{a:'#f0e4c8',b:'#e4d8bc',top:'#8a7a5a',lowA:'#6a4428',lowB:'#5a3820',tile:'rgba(0,0,0,.15)',trim:'#4a2c14'},
+ shelf:{top:'#8a5a30',back:'#4a2c14',back2:'#3a2210',strip:'#c8a060',post:'#2a180a'},
+ fridge:{top:'#d0c4a8',frame:'#8a7a5a',band:'#2c6a3c',band2:'#1c5a2c'},
+ stand:{top:'#6a4428',L:'#5a3820',R:'#4a2c18'},crate:{in:'#5a3818',L:'#c89858',R:'#a87838',slat:'#7a5028'},tag:'#f8f0d8',tagInk:'#2a180a',
+ counter:{L:'#f0e8d8',R:'#dcd0b8',stripe:'#2c6a3c'},check:{L:'#6a4428',R:'#5a3820',lamp:'#2c6a3c'},
+ sign:{bg:'#2c6a3c',fg:'#f8f0d8',wire:'#2a180a'},wsign:['#2c6a3c','#f8f0d8'],
+ aisles:[['vino','VINI'],['conserve','DISPENSA']],fridges:['formaggi','formaggi','salumi','salumi','latticini','latticini','yogurt','formaggi'],
+ fruits:['mele','pere','carote','insalata','pomodori','zucchine','uva','limoni','arance','peperoni'],extra:'bottega'},
+{name:'Gourmet Doro',sub:'supermercato di lusso',
+ floor:(i,j)=>(i+j)%2?'#5a3a24':'#6a4630',floorEdge:'rgba(20,10,5,.4)',planks:1,
+ wall:{a:'#24304a',b:'#1c2840',top:'#10182a',lowA:'#3a2418',lowB:'#2c1c12',tile:'rgba(200,160,80,.25)',trim:'#c8a050'},
+ shelf:{top:'#2a2228',back:'#140e12',back2:'#100a0e',strip:'#c8a050',post:'#c8a050'},
+ fridge:{top:'#2a2228',frame:'#c8a050',band:'#c8a050',band2:'#a08038'},
+ stand:{top:'#2a2228',L:'#3a2a24',R:'#2a1e1a'},crate:{in:'#3a2418',L:'#8a5a38',R:'#6a4428',slat:'#c8a050'},tag:'#1a1020',tagInk:'#c8a050',
+ counter:{L:'#2a2228',R:'#1c161a',stripe:'#c8a050'},check:{L:'#2a2228',R:'#1c161a',lamp:'#c8a050'},
+ sign:{bg:'#1a1020',fg:'#e8c878',wire:'#c8a050'},wsign:['#1a1020','#e8c878'],
+ aisles:[['vino','CANTINA'],['olio','OLI PREGIATI'],['caffe','TE E CAFFE']],fridges:['formaggi','formaggi','salumi','salumi','formaggi','salumi','latticini','yogurt'],
+ fruits:['fragole','uva','pere','mele','arance','limoni','melanzane','peperoni'],extra:'gourmet'},
+];
+
+function scene(T){
+  x.fillStyle='#0e0c12';x.fillRect(0,0,480,300);
+  floor(T);walls(T);
+  const O=[];const add=(i,j,f)=>O.push([i+j+1,f]);const who=(gi,gj,f)=>O.push([gi+gj,f]);
+  // frigo a muro
+  for(let i=1;i<=8;i++)add(i,1,()=>fridge(i,1,T.fridges[i-1],T,i));
+  // macelleria
+  for(let i=11;i<=14;i++)add(i,2,()=>butcher(i,2,T));
+  who(12.4,1.6,()=>chr(12.4,1.6,BUT));who(13.9,1.5,()=>chr(13.9,1.5,BUT,{flip:1}));
+  who(10.4,3.7,()=>dispenser(10.4,3.7,T));
+  who(11.6,3.9,()=>chr(11.6,3.9,C1));who(12.7,4.1,()=>chr(12.7,4.1,C4,{ticket:1}));who(13.8,4.3,()=>chr(13.8,4.3,C2,{ticket:1}));
+  who(11.3,5.0,()=>chr(11.3,5.0,{},{ticket:1,basket:1}));
+  // frutta e verdura
+  const fr=T.fruits;let n=0;
+  for(let j=3;j<=9;j++)if(j!==6)add(1,j,()=>crate(1,j,fr[n++%fr.length],T));
+  const isl=T.extra==='bio'?[[3,3],[4,3],[3,4],[4,4],[3,7],[4,7],[3,8],[4,8],[3,10],[4,10]]:[[3,4],[4,4],[3,5],[4,5],[3,8],[4,8],[3,9],[4,9]];
+  isl.forEach(([i,j],k)=>add(i,j,()=>crate(i,j,fr[(k+3)%fr.length],T,k%2===0)));
+  // corsie
+  const rows=T.extra==='iper'?[4,6,8,10]:T.extra==='bottega'?[5,7]:[5,7,9];
+  rows.forEach((j,r)=>{const st=T.aisles[r%T.aisles.length][0];for(let i=6;i<=10;i++)add(i,j,()=>gondola(i,j,st,T,r*13))});
+  if(T.extra==='bottega')for(let i=6;i<=8;i++)add(i,9,()=>breadStand(i,9,T));
+  // surgelati
+  for(let j=6;j<=9;j++)add(13,j,()=>freezer(13,j,T));
+  // casse
+  const cs=T.extra==='bottega'?[8]:[6,9];
+  cs.forEach(i=>{add(i,11,()=>checkout(i,11,T));who(i+1.4,11.5,()=>chr(i+1.4,11.5,C3,{flip:1}))});
+  // clienti
+  who(8.3,6.4,()=>chr(8.3,6.4,C2,{cart:1}));who(6.2,8.5,()=>chr(6.2,8.5,C3,{cart:1,flip:1}));who(2.4,6.4,()=>chr(2.4,6.4,C4,{basket:1}));
+  if(T.extra!=='bottega')who(11.6,9.6,()=>chr(11.6,9.6,C1,{cart:1,flip:1}));
+  O.sort((a,b)=>a[0]-b[0]).forEach(o=>o[1]());
+  // insegne
+  wallSign(12.5,1,52,'MACELLERIA',...T.wsign);numberBoard(15.3,1,40,42);
+  wallSign(4.5,1,52,'FRIGO',...T.wsign);wallSign(1,6,48,'FRUTTA',...T.wsign);
+  rows.forEach((j,r)=>hangSign(7+r*1.5,j+.5,T.aisles[r%T.aisles.length][1],T));
+  hangSign(13.5,7.5,'SURGELATI',T);
+  // cartellino
+  x.textAlign='left';x.textBaseline='top';x.font='16px Silkscreen';x.fillStyle='#1a1020';x.fillText(T.name,9,9);x.fillStyle=T.wsign[0]==='#1a1020'||T.wsign[0]==='#20281c'?T.wsign[1]:T.wsign[0];x.fillText(T.name,8,8);
+  x.font='8px Silkscreen';x.fillStyle='#c8c0b8';x.fillText(T.sub,9,28);
+}
+const idx=Math.max(1,Math.min(5,parseInt(location.hash.slice(1))||1))-1;
+document.fonts.load('8px Silkscreen').finally(()=>scene(THEMES[idx]));
+addEventListener('hashchange',()=>location.reload());
+</script></body></html>
