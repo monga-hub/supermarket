@@ -27,6 +27,12 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 #spingi{right:calc(132px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:72px;height:72px;background:#b8a0a0;color:#3a1010;opacity:.6;font-size:13px}
 #spingi.on{background:#f0a070;opacity:1}
 #time{z-index:5}
+#gear{position:fixed;z-index:9;right:calc(112px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));width:44px;height:44px;padding:0;border:3px solid var(--ink);border-radius:6px;background:var(--paper);color:var(--ink);font-size:26px;line-height:1;box-shadow:4px 4px 0 rgba(0,0,0,.35)}#gear:active{transform:scale(.94)}
+#menu{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:rgba(10,8,16,.6)}#menu[hidden]{display:none}
+#menu>div{background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:6px;padding:14px 18px;width:min(86vw,360px);box-shadow:6px 6px 0 rgba(0,0,0,.4);text-align:center}
+#menu h2{margin:0 0 8px;font-size:26px;color:var(--red)}#menu h3{margin:10px 0 4px;font-size:18px;text-align:left}
+#menu button{font:20px "Gioco",monospace;border:3px solid var(--ink);border-radius:5px;background:#fff;color:var(--ink);padding:3px 10px}#menu button:disabled{opacity:.35}#menu button:active{transform:scale(.95)}
+#audio{width:100%}.slot{display:flex;align-items:center;gap:6px;margin:4px 0;font-size:17px;text-align:left}.slot span{flex:1}
 #dx{position:fixed;right:calc(10px + env(safe-area-inset-right,0px));top:calc(64px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;align-items:stretch;gap:6px}
 #coda,#turno,#mturno,#mcoda{background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:4px;padding:4px 10px 6px;box-shadow:4px 4px 0 rgba(0,0,0,.35);font-size:13px;min-width:120px}
 .fila b{color:#2a7a40}.fila ol{margin:2px 0 5px;padding:0 0 0 18px;line-height:1.35}.fila li.me{color:#a0307a;font-weight:700}.fila li.call{background:#ffe6a0}.fila li.none{list-style:none;margin-left:-18px;opacity:.6}
@@ -87,6 +93,11 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 <button class="btn" id="salta" aria-label="Salta">SALTA</button>
 <button class="btn" id="spingi" aria-label="Spingi">SPINGI</button>
 <button class="btn" id="prendi" aria-label="Prendi">PRENDI</button>
+<button id="gear" aria-label="Menu">⚙</button>
+<div id="menu" hidden><div><h2>MENU</h2>
+ <h3>AUDIO</h3><button id="audio"></button>
+ <h3>SALVA</h3><div id="slots"></div>
+ <p><button id="chiudi">CHIUDI</button></p></div></div>
 <div id="over"><div><h1>La spesa della nonna</h1><p id="overTxt">Ogni partita il supermercato è disposto in modo diverso. Trova quello che c'è nella lista e vai alla cassa prima che chiuda. Frutta e verdura vanno pesate: prenota la bilancia e ricorda il codice scritto sulla cassetta.</p><p id="choice" hidden><button data-c="0">🧺 CESTINO<br><small>veloce · max 4</small></button><button data-c="1">🛒 CARRELLO<br><small>lento · non salta</small></button></p><p><b id="cta">Tocca PRENDI per iniziare</b></p></div></div>
 <script>
 // ===================================================================================
@@ -328,7 +339,8 @@ const $=id=>document.getElementById(id);
 const cv=$('c'),ctx=cv.getContext('2d');let W=0,H=0,DPR=1;
 function resize(){DPR=Math.min(2,devicePixelRatio||1);W=cv.width=Math.round(innerWidth*DPR);H=cv.height=Math.round(innerHeight*DPR)}
 addEventListener('resize',resize);resize();
-let AC;function beep(f,d=.08,t='square'){try{AC=AC||new AudioContext();const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.value=.05;o.connect(g).connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch{}}
+let AC,AUDIO=true;try{AUDIO=localStorage.getItem('nonna-audio')!=='0'}catch{}
+function beep(f,d=.08,t='square'){if(!AUDIO)return;try{AC=AC||new AudioContext();const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.value=.05;o.connect(g).connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch{}}
 const CAST=[{who:'baffi',cart:true,speed:150,extras:['think','grab']},{who:'mamma',cart:true,speed:135,extras:['list','point','scold']},
   {who:'anziano',cart:false,speed:105,extras:['look','put','hat','cane']},{who:'ragazzo',cart:false,speed:240,extras:['grab','sorry','skid']}];
 let CASH=[]; // cassieri: stanno fermi dietro il banco e cambiano posa
@@ -643,7 +655,19 @@ function render(now){
 Promise.all([...[atlas,kit].map(im=>new Promise(r=>im.complete&&im.naturalWidth?r():im.onload=r)),document.fonts.load('700 26px "Gioco"').catch(()=>{})]).then(()=>{
   start(false);G.state='title';$('over').hidden=DEBUG;intro();READY=true}); // i clienti girano già dietro la schermata iniziale
 let last=performance.now();function loop(t){const dt=Math.min(.05,(t-last)/1000);last=t;
+  if(!$('menu').hidden){render(t);return requestAnimationFrame(loop)}
   if(G&&G.state!=='play')NPC.forEach(n=>updateNPC(n,dt));CASH.forEach(c=>updateCash(c,dt));
   if(G&&G.state!=='play'){updateQueue(dt);drawQueue();updateMac(dt)}updateBut(dt);update(dt);render(t);requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
+// ---------- menu: audio e 3 slot di salvataggio (si salva il livello raggiunto, non la partita a metà)
+const slotKey=k=>'nonna-slot-'+k,readSlot=k=>{try{return JSON.parse(localStorage.getItem(slotKey(k)))}catch{return null}};
+function drawMenu(){$('audio').textContent='AUDIO: '+(AUDIO?'SÌ 🔊':'NO 🔇');
+  $('slots').innerHTML=[1,2,3].map(k=>{const v=readSlot(k);return `<div class="slot"><span>${k} · ${v?'Livello '+(v.lv+1)+' <small>'+new Date(v.t).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+'</small>':'vuoto'}</span><button data-s="${k}">SALVA</button><button data-l="${k}" ${v?'':'disabled'}>CARICA</button></div>`}).join('')}
+$('gear').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();drawMenu();$('menu').hidden=false});
+$('menu').addEventListener('pointerdown',e=>{e.stopPropagation();const b=e.target.closest('button');if(!b){if(e.target===$('menu'))$('menu').hidden=true;return}e.preventDefault();
+  if(b.id==='chiudi')$('menu').hidden=true;
+  else if(b.id==='audio'){AUDIO=!AUDIO;try{localStorage.setItem('nonna-audio',AUDIO?'1':'0')}catch{}beep(880)}
+  else if(b.dataset.s){try{localStorage.setItem(slotKey(b.dataset.s),JSON.stringify({lv:LV,t:Date.now()}))}catch{}beep(880)}
+  else if(b.dataset.l){const v=readSlot(b.dataset.l);if(v){LV=v.lv;saveLV();$('bil').hidden=true;start(false);G.state='title';$('over').hidden=false;intro();$('menu').hidden=true;beep(660);return}}
+  drawMenu()});
 </script>
