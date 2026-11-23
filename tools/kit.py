@@ -11,6 +11,7 @@ PRO = alpha('kit/foglio-prodotti.jpg')
 MOB2 = alpha('kit/foglio-mobili2.jpg')
 PRO2 = alpha('kit/foglio-prodotti2.jpg')
 MAC = alpha('kit/foglio-macelleria.jpg')
+EXT = alpha('kit/foglio-extra.jpg')
 
 # il foglio mobili ha righe chiare del pavimento sotto lo scaffale doppio: lì uso una soglia più larga
 def loose(img, box):
@@ -152,6 +153,9 @@ if __name__ == '__main__':
     for n, (box, h) in PRODS.items(): items['p:' + n + ':0'] = {'img': product(box, h)}
     items['p:CARNE:0'] = {'img': product((1389, 1555, 1833, 1833), 30, MAC)}
     items['distributore'] = {'img': product((1109, 187, 1304, 699), 70, MAC)}
+    items['cartello'] = {'img': product((180, 165, 530, 625), 38, EXT)}
+    items['carrelli'] = {'img': product((670, 95, 1345, 785), 62, EXT)}
+    items['cestini'] = {'img': product((1480, 160, 1845, 760), 48, EXT)}
     # insalata e cavolo nel foglio sono quasi uguali: insalata verso il giallo-chiaro, cavolo verso il verde-azzurro
     import colorsys
     for n, dh, kv, add in (('INSALATA', -.06, 1.12, .05), ('CAVOLI', .08, .95, 0)):

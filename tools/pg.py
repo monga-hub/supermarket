@@ -33,7 +33,13 @@ SHEETS = {
  'ragazzo':  (235, 'idle R,w1 R,w2 R,w3 R, bidle R,b1 R,-,b3 R, skid R,grab R,trip R,sorry R'),
  'cassieri': (250, 'f_idle L,f_scan L,f_type L,f_wave L, m_idle L,m_scan L,m_type L,m_wave L'),
  'macellaio': (255, 'idle L,chop L,give L,call L'),
+ # fogli con più personaggi: la posa si scrive chi:posa
+ 'nonna2':   (205, 'nonnac:idle R,nonnac:w1 R,nonnac:w2 R,nonnac:w3 R, nonnac:bidle R,nonnac:b1 R,nonnac:b2 R,nonnac:b3 R, nonna:phone R,nonna:slip R,nonna:watch R,nonna:wait R'),
+ 'pulizie':  (235, 'idle R,w1 R,w2 R,w3 R, mop1 R,mop2 R,sign R,rest R'),
+ 'magazziniere': (245, 'idle R,w1 R,w2 R,w3 R, carry R,shelf R,kneel R,thumb R'),
+ 'clienti2': (245, 'dama:idle R,manager:idle R,studente:idle R,tifoso:idle R, papa:idle R,vecchina:idle R,muratore:idle R,riccia:idle R'),
 }
+CARTS = ('nonnac:', 'papa:', 'vecchina:', 'muratore:', 'riccia:', 'magazziniere:idle', 'magazziniere:w')  # con carrello: àncora a metà tra piedi e ruote
 if __name__ == '__main__':
     out, preview = {}, []
     for name, (h, spec) in SHEETS.items():
@@ -49,8 +55,8 @@ if __name__ == '__main__':
             f = f.resize((max(1, round(f.width * k)), max(1, round(f.height * k))), Image.LANCZOS)
             a = np.asarray(f)[:, :, 3]; bot = a[int(a.shape[0] * .88):]
             xs = np.where(bot.max(0) > 0)[0]
-            ax = (xs[0] + xs[-1]) / 2 if name in ('baffi', 'mamma') or not len(xs) else float(np.median(np.where(bot > 0)[1]))
-            key = name + ':' + pose
+            key = pose if ':' in pose else name + ':' + pose
+            ax = (xs[0] + xs[-1]) / 2 if name in ('baffi', 'mamma') or key.startswith(CARTS) or not len(xs) else float(np.median(np.where(bot > 0)[1]))
             out[key] = dict(img=f, ax=round(ax), ay=f.height)
     # impacchetto a scaffale
     W, x, y, rowh, pos = 1400, 0, 0, 0, {}
