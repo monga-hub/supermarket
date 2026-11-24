@@ -18,6 +18,7 @@ CAS = alpha('kit/foglio-cassette.jpg')
 BAN = alpha('kit/foglio-banchi.jpg')
 CES = alpha('kit/foglio-ceste.jpg')
 VUO = alpha('kit/foglio-vuoti.jpg')
+MC2 = alpha('kit/foglio-macelleria2.jpg')
 
 # il foglio mobili ha righe chiare del pavimento sotto lo scaffale doppio: lì uso una soglia più larga
 def loose(img, box):
@@ -54,7 +55,7 @@ PIECES = {
                    boards=[347, 241, 135, 30], spans=[(.05, .85)]),
   'bilancia': dict(box=(1347, 1607, 1610, 1864), A=(1358, 1813), B=(1467, 1862), L=.9),
   # foglio macelleria: L in proporzione al bancone (715 px = 3 caselle)
-  'macelleria': dict(sheet=MAC, box=(130, 480, 1330, 1470), A=(200, 1060), B=(915, 1455), L=4.5),  # 1,5 volte più grande del resto
+  'macelleria': dict(sheet=MAC, box=(130, 480, 1330, 1470), A=(200, 1060), B=(915, 1455), L=3),
   'display':    dict(sheet=MAC, box=(1475, 130, 1880, 535), A=(1482, 357), B=(1797, 530), L=1.32),
   'insegna':    dict(sheet=MAC, box=(1475, 555, 1878, 1035), A=(1482, 826), B=(1862, 1022), L=1.6),
 }
@@ -83,6 +84,11 @@ PIECES |= full(VUO, 2, .42, [('v:scaffale', (864, 137, 1190, 921), (864, 778), (
 PIECES |= full(VUO, 2, .45, [('v:frigo', (1411, 104, 1943, 1034), (1411, 833), (1783, 1033))])
 PIECES |= full(VUO, .7, None, [('v:cesta', (194, 1233, 739, 1916), (194, 1761), (468, 1915))])
 PIECES |= full(VUO, 2, None, [('v:bancale', (1147, 1376, 1961, 1914), (1147, 1704), (1533, 1913))])
+
+# macelleria lunga: 3 segmenti di bancone da 5/3 di casella, messi in fila (5 caselle + distributore)
+PIECES |= full(MC2, 5 / 3, None, [('mac1', (60, 700, 665, 1380), (66, 1134), (413, 1372)),
+  ('mac2', (710, 705, 1320, 1385), (717, 1131), (1075, 1376)), ('mac3', (1370, 715, 1935, 1390), (1384, 1150), (1728, 1379))])
+PIECES['mac3']['erase'] = [(1370, 1185), (1548, 1280), (1548, 1440), (1370, 1440)]  # le lattine finite nel foglio
 
 # testate: metà destra dello scaffale pieno (1 casella, col fianco)
 PIECES |= {'t:' + n[2:]: dict(p, box=((p['A'][0] + p['B'][0]) // 2, *p['box'][1:]), A=((p['A'][0] + p['B'][0]) // 2, (p['A'][1] + p['B'][1]) // 2), L=1)
@@ -135,6 +141,9 @@ def furniture(name, p):
     sheet = p.get('sheet') or (MOB2 if p.get('s2') else MOB)
     src = loose(sheet, p['box']) if p.get('loose') else sheet.crop(p['box'])
     ox, oy = p['box'][:2]
+    if p.get('erase'):  # via i pezzi estranei attaccati al mobile (poligono in coordinate del foglio)
+        s = np.asarray(src).copy(); mk = Image.new('L', src.size, 0)
+        ImageDraw.Draw(mk).polygon([(x - ox, y - oy) for x, y in p['erase']], fill=255); s[np.asarray(mk) > 0, 3] = 0; src = Image.fromarray(s, 'RGBA')
     # tengo solo il pezzo attaccato al punto B (via i frammenti dei mobili vicini nel riquadro)
     arr = np.asarray(src).copy(); on = arr[:, :, 3] > 0
     m = np.zeros_like(on); by, bx = p['B'][1] - oy, p['B'][0] - ox
