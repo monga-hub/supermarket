@@ -18,6 +18,11 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 #load.via{opacity:0;pointer-events:none}#load svg{width:min(78vw,340px)}#load text{font:800 30px "Gioco",monospace;fill:var(--red);letter-spacing:.05em;paint-order:stroke;stroke:var(--paper);stroke-width:5px}
 #lbar{width:min(64vw,260px);height:18px;border:3px solid var(--ink);border-radius:4px;background:var(--paper);box-shadow:4px 4px 0 rgba(0,0,0,.25)}#lbar i{display:block;height:100%;width:0;background:var(--red);transition:width .3s}
 #loadTxt{margin:0;color:var(--ink);font-size:18px}
+#home{position:fixed;inset:0;z-index:40;display:grid;place-content:center;justify-items:center;gap:10px;background:var(--mint)}#home[hidden]{display:none}
+#hbtn{display:grid;gap:10px}@media (max-height:500px){#hbtn{grid-template-columns:1fr 1fr}#home h1{font-size:24px}}
+#home canvas{position:static;width:min(86vw,380px,80vh);height:auto;aspect-ratio:380/170}#home h1{margin:0;font-size:30px;color:var(--red);text-shadow:3px 3px 0 var(--paper)}
+#home button{width:min(72vw,280px);font:24px "Gioco",monospace;border:4px solid var(--ink);border-radius:6px;background:var(--paper);color:var(--ink);padding:6px;box-shadow:4px 4px 0 rgba(0,0,0,.4)}
+#home button:disabled{opacity:.4}#home button:active{transform:scale(.95)}#home small{display:block;font-size:15px;opacity:.7}
 #over[hidden]{display:none}
 #over{position:fixed;inset:0;display:grid;place-items:center;background:rgba(10,8,16,.55)}
 #over div{background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:6px;padding:16px 22px;max-width:min(86vw,380px);text-align:center;box-shadow:6px 6px 0 rgba(0,0,0,.4)}
@@ -32,7 +37,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 #spingi.on{background:#f0a070;opacity:1}
 #time{z-index:5}
 #gear{position:fixed;z-index:9;right:calc(112px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));width:44px;height:44px;padding:0;border:3px solid var(--ink);border-radius:6px;background:var(--paper);color:var(--ink);font-size:26px;line-height:1;box-shadow:4px 4px 0 rgba(0,0,0,.35)}#gear:active{transform:scale(.94)}
-#menu{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:rgba(10,8,16,.6)}#menu[hidden]{display:none}
+#menu{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(10,8,16,.6)}#menu[hidden]{display:none}
 #menu>div{background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:6px;padding:14px 18px;width:min(86vw,360px);box-shadow:6px 6px 0 rgba(0,0,0,.4);text-align:center}
 #menu h2{margin:0 0 8px;font-size:26px;color:var(--red)}#menu h3{margin:10px 0 4px;font-size:18px;text-align:left}
 #menu button{font:20px "Gioco",monospace;border:3px solid var(--ink);border-radius:5px;background:#fff;color:var(--ink);padding:3px 10px}#menu button:disabled{opacity:.35}#menu button:active{transform:scale(.95)}
@@ -102,6 +107,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
  <h3>AUDIO</h3><button id="audio"></button>
  <h3>SALVA</h3><div id="slots"></div>
  <p><button id="chiudi">CHIUDI</button></p></div></div>
+<div id="home" hidden><canvas id="hcv" width="380" height="170"></canvas><h1>La spesa della nonna</h1>
+ <div id="hbtn"><button id="hNuova">NUOVA PARTITA</button><button id="hCont">CONTINUA PARTITA</button><button id="hCarica">CARICA PARTITA</button><button id="hAudio"></button></div></div>
 <div id="load"><svg viewBox="0 0 300 250"><path id="arco" d="M38,175 A112,112 0 0 1 262,175" fill="none"/>
  <text><textPath href="#arco" startOffset="50%" text-anchor="middle">LA SPESA DELLA NONNA</textPath></text>
  <clipPath id="tondo"><circle cx="150" cy="168" r="76"/></clipPath><circle cx="150" cy="168" r="80" fill="#1c3a24"/>
@@ -452,7 +459,7 @@ function end(win){$('bil').hidden=true;$('choice').hidden=true;G.weighing=false;
 const nearScale=(r=110)=>!!SCALE&&Math.hypot(G.x-SCALE_STAND[0],(G.y-SCALE_STAND[1])*1.3)<r;
 function target(){const [gi,gj]=toTile(G.x,G.y);let best=null,bd=1.25;for(const s of SPOTS){const d=Math.hypot(s.i-gi,s.j-gj);if(d<bd){bd=d;best=s}}return best}
 function pick(){
-  if(!READY)return;
+  if(!READY||!$('home').hidden)return;
   if(!G||G.state!=='play'){if(G&&G.state!=='title'){start(false);G.state='title';$('over').hidden=false;intro();return}start(true);return}
   if(G.weighing||G.serving||G.till||G.slipT>0)return;
   if(nearMac('disp')&&!MQ.includes(G)){if(!needMeat())return say('La carne non è nella lista');takeTicket(G);act(G,'reach',.4);say('Hai preso il numero '+pad2(G.ticket));return beep(900,.06)}
@@ -657,16 +664,16 @@ function render(now){
     ctx.strokeStyle='rgba(255,0,255,.5)';ctx.lineWidth=2;NODES.forEach((a,i)=>ADJ[i].forEach(j=>{if(j>i){ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...NODES[j]);ctx.stroke()}}))}
 }
 // CARICAMENTO: controlla se su internet c'è una versione nuova (VER più alto) e intanto carica immagini e font. Ogni cosa pronta = un pezzo di barra.
-const VER=49; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
+const VER=50; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
 const checkUpd=()=>Promise.race([new Promise(r=>setTimeout(r,3000)),fetch(location.pathname+'?nv='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{
   const v=+(t.match(/const VER=(\d+)/)||[])[1];if(v>VER&&!location.search.includes('v='+v)){$('loadTxt').textContent='Versione nuova! La scarico…';location.replace(location.pathname+'?v='+v+location.hash);return new Promise(()=>{})}
   $('loadTxt').textContent='Gioco aggiornato ✓'})]).catch(()=>{}); // nell'Artifact il controllo non funziona: si va avanti
 let loaded=0;const jobs=[checkUpd(),...[atlas,kit].map(im=>new Promise(r=>im.complete&&im.naturalWidth?r():im.onload=r)),document.fonts.load('700 26px "Gioco"').catch(()=>{}),new Promise(r=>setTimeout(r,1200))];
 jobs.forEach(j=>j.then(()=>$('lbar').firstChild.style.width=100*++loaded/jobs.length+'%'));
 Promise.all(jobs).then(()=>{setTimeout(()=>$('load').classList.add('via'),300);
-  start(false);G.state='title';$('over').hidden=DEBUG;intro();READY=true}); // i clienti girano già dietro la schermata iniziale
+  start(false);G.state='title';showHome();READY=true}); // i clienti girano già dietro il menu
 let last=performance.now();function loop(t){const dt=Math.min(.05,(t-last)/1000);last=t;
-  if(!$('menu').hidden){render(t);return requestAnimationFrame(loop)}
+  if(!$('home').hidden)drawHome(dt);if(!$('menu').hidden){render(t);return requestAnimationFrame(loop)}
   if(G&&G.state!=='play')NPC.forEach(n=>updateNPC(n,dt));CASH.forEach(c=>updateCash(c,dt));
   if(G&&G.state!=='play'){updateQueue(dt);drawQueue();updateMac(dt)}updateBut(dt);update(dt);render(t);requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
@@ -679,6 +686,17 @@ $('menu').addEventListener('pointerdown',e=>{e.stopPropagation();const b=e.targe
   if(b.id==='chiudi')$('menu').hidden=true;
   else if(b.id==='audio'){AUDIO=!AUDIO;try{localStorage.setItem('nonna-audio',AUDIO?'1':'0')}catch{}beep(880)}
   else if(b.dataset.s){try{localStorage.setItem(slotKey(b.dataset.s),JSON.stringify({lv:LV,t:Date.now()}))}catch{}beep(880)}
-  else if(b.dataset.l){const v=readSlot(b.dataset.l);if(v){LV=v.lv;saveLV();$('bil').hidden=true;start(false);G.state='title';$('over').hidden=false;intro();$('menu').hidden=true;beep(660);return}}
+  else if(b.dataset.l){const v=readSlot(b.dataset.l);if(v){LV=v.lv;saveLV();$('bil').hidden=true;$('home').hidden=true;start(false);G.state='title';$('over').hidden=false;intro();$('menu').hidden=true;beep(660);return}}
   drawMenu()});
+// ---------- menu iniziale: la nonna col carrello attraversa la scena, sotto i quattro pulsanti
+const HN={who:'nonnac',x:-100,y:165,front:true,moving:true,walk:0};
+function drawHome(dt){const c=$('hcv').getContext('2d');c.clearRect(0,0,380,170);HN.x+=90*dt;HN.walk+=dt*6;if(HN.x>480)HN.x=-100;
+  const [sx,sy,w,h,ax,ay]=PG['nonnac:'+frameOf(HN)];c.imageSmoothingEnabled=true;c.drawImage(atlas,sx,sy,w,h,HN.x-ax*.78,HN.y-ay*.78,w*.78,h*.78)}
+function showHome(){$('over').hidden=true;$('home').hidden=DEBUG;$('hCont').innerHTML='CONTINUA PARTITA<small>Livello '+(LV+1)+'</small>';$('hCont').disabled=LV===0;$('hAudio').textContent='AUDIO: '+(AUDIO?'SÌ 🔊':'NO 🔇')}
+const play=()=>{$('home').hidden=true;$('over').hidden=false;intro();beep(660)};
+$('home').addEventListener('pointerdown',e=>{e.stopPropagation();const b=e.target.closest('button');if(!b)return;e.preventDefault();
+  if(b.id==='hNuova'){LV=0;saveLV();start(false);G.state='title';play()}
+  else if(b.id==='hCont')play();
+  else if(b.id==='hCarica'){drawMenu();$('menu').hidden=false}
+  else{AUDIO=!AUDIO;try{localStorage.setItem('nonna-audio',AUDIO?'1':'0')}catch{}showHome();beep(880)}});
 </script>
