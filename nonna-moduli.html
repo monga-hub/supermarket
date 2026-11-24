@@ -23,6 +23,15 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 #home canvas{position:static;width:min(86vw,380px,80vh);height:auto;aspect-ratio:380/170}#home h1{margin:0;font-size:30px;color:var(--red);text-shadow:3px 3px 0 var(--paper)}
 #home button{width:min(72vw,280px);font:24px "Gioco",monospace;border:4px solid var(--ink);border-radius:6px;background:var(--paper);color:var(--ink);padding:6px;box-shadow:4px 4px 0 rgba(0,0,0,.4)}
 #home button:disabled{opacity:.4}#home button:active{transform:scale(.95)}#home small{display:block;font-size:15px;opacity:.7}
+#mappa{position:fixed;inset:0;z-index:40;background:#8fd4a0;overflow-y:auto;touch-action:pan-y}#mappa[hidden]{display:none}
+#mtop{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--paper);border-bottom:4px solid var(--ink);color:var(--ink);font-size:22px}
+#mtop b{flex:1;color:var(--red)}#mtop span{color:#c88a00}#mtop button{font:20px "Gioco",monospace;border:3px solid var(--ink);border-radius:5px;background:#fff;color:var(--ink)}
+#mbox{position:relative;width:min(100vw,480px);aspect-ratio:9/16;margin:0 auto;background:center/cover}#mbox svg{position:absolute;inset:0;width:100%;height:100%}
+.nodo{position:absolute;transform:translate(-50%,-50%);width:62px;height:62px;border-radius:50%;border:4px solid var(--ink);background:var(--paper);color:var(--ink);font:30px "Gioco",monospace;box-shadow:0 5px 0 rgba(0,0,0,.3);padding:0}
+.nodo.chiuso{background:#a8b4ac;color:#5a6a60}.nodo.qui{background:var(--gold);animation:pulsa .7s infinite alternate}@keyframes pulsa{to{transform:translate(-50%,-50%) scale(1.12)}}
+.nodo b{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:2px;font-size:20px;color:#ffc400;white-space:nowrap;text-shadow:2px 2px 0 var(--ink)}
+#mnonna{position:absolute;width:58px;transform:translate(-50%,-125%);border-radius:50%;border:3px solid var(--ink);pointer-events:none}
+.nodo b s,.bigstar s{color:#7a8a80;text-decoration:none}.bigstar{display:block;font-size:40px;color:#ffc400;text-shadow:2px 2px 0 var(--ink);letter-spacing:.1em}
 #over[hidden]{display:none}
 #over{position:fixed;inset:0;display:grid;place-items:center;background:rgba(10,8,16,.55)}
 #over div{background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:6px;padding:16px 22px;max-width:min(86vw,380px);text-align:center;box-shadow:6px 6px 0 rgba(0,0,0,.4)}
@@ -106,7 +115,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 <div id="menu" hidden><div><h2>MENU</h2>
  <h3>AUDIO</h3><button id="audio"></button>
  <h3>SALVA</h3><div id="slots"></div>
- <p><button id="chiudi">CHIUDI</button></p></div></div>
+ <p><button id="amappa">MAPPA</button> <button id="chiudi">CHIUDI</button></p></div></div>
+<div id="mappa" hidden><div id="mtop"><b>PICCOLA CITTÀ</b><span id="mstars"></span><button id="mmenu">MENU</button></div><div id="mbox"></div></div>
 <div id="home" hidden><canvas id="hcv" width="380" height="170"></canvas><h1>La spesa della nonna</h1>
  <div id="hbtn"><button id="hNuova">NUOVA PARTITA</button><button id="hCont">CONTINUA PARTITA</button><button id="hCarica">CARICA PARTITA</button><button id="hAudio"></button></div></div>
 <div id="load"><svg viewBox="0 0 300 250"><path id="arco" d="M38,175 A112,112 0 0 1 262,175" fill="none"/>
@@ -148,6 +158,9 @@ const lv=n=>n<LEVELS.length?LEVELS[n]:{...LEVELS.at(-1),time:Math.max(100,145-5*
 let LV=0;try{LV=+(localStorage.getItem('nonna-lv')||0)}catch{}
 {const h=location.hash.match(/lv=(\d+)/);if(h)LV=Math.max(0,h[1]-1)} // #lv=5 apre il livello 5 (per provare)
 const saveLV=()=>{try{localStorage.setItem('nonna-lv',LV)}catch{}};
+// STELLE per nodo: 3 se finisci con almeno il 40% del tempo, 2 col 20%, 1 se finisci. Chi giocava prima ha 1 stella per ogni livello superato.
+let STARS;try{STARS=JSON.parse(localStorage.getItem('nonna-stelle'))}catch{}if(!Array.isArray(STARS))STARS=Array(LV).fill(1);
+const saveStars=()=>{try{localStorage.setItem('nonna-stelle',JSON.stringify(STARS))}catch{}},starsOf=t=>t>=.4?3:t>=.2?2:1,stelle=n=>'★'.repeat(n)+'<s>★</s>'.repeat(3-n);
 let MAC,MAC_NODE,R,C,OX,OY,BW=2000,BH=1400,CELL,MODS=[],SPOTS=[],NODES=[],ADJ=[],SCALE,SCALE_STAND,SCALE_NODE,CASSE=[],START,STAGE;
 const iso=(i,j,h=0)=>[OX+(i-j)*T,OY+(i+j)*U-h];
 const toTile=(x,y)=>{const a=(x-OX)/T,b=(y-OY)/U;return [(a+b)/2,(b-a)/2]};
@@ -385,13 +398,14 @@ let mHtml='';function drawMac(){if(!MAC){$('mcoda').hidden=$('mturno').hidden=tr
   const k=G?MQ.indexOf(G):-1,t=$('mturno');t.hidden=k<0||near;if(t.hidden)return;
   const red=k===0&&!G.serving&&MQ.length>1,txt='🎫 '+pad2(G.ticket)+(k===0?red?' · VAI! '+Math.ceil(MT)+'s':' · TOCCA A TE':' · ora '+pad2(MQ[0].ticket));t.className=red?'red':k===0?'go':'';if(t.textContent!==txt)t.textContent=txt}
 function newActor(who,x,y){return {who,x,y,front:true,flip:false,walk:0,moving:false,rx:26,ry:12}}
-function start(keepLevel){
+const seeded=s=>()=>{s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+function start(keepLevel){const rnd0=Math.random;Math.random=seeded(LV*7919+11); // stesso nodo = stesso negozio e stessa lista
   if(!keepLevel)newLevel();
   const [sx,sy]=iso(...START);
   const names=[...new Set(SPOTS.map(s=>s.n))];
   G=Object.assign(newActor('nonna',sx,sy),{state:'play',z:0,vz:0,time:lv(LV).time,bag:[],weighed:[],weighing:false,wasHead:false,msgT:0,front:false,
     list:[...shuffle(names.filter(n=>FRESH.has(n))).slice(0,lv(LV).fresh),...shuffle(names.filter(n=>!FRESH.has(n))).slice(0,lv(LV).pack),...(lv(LV).meat?['CARNE']:[])].map(n=>({n,got:false}))});
-  shuffle(G.list);
+  shuffle(G.list);Math.random=rnd0; // da qui in poi (codici bilancia, clienti, telefono) torna casuale
   // ogni partita nuovi codici bilancia (2 cifre, tutti diversi): si leggono passando accanto alle cassette
   const used=new Set();CODE={};for(const n of FRESH){let c;do c=10+ri(90);while(used.has(c));used.add(c);CODE[n]=String(c)}
   QUEUE=[];QT=WINDOW;$('bil').hidden=true;MQ=[];MT=WINDOW;TICK=1+ri(60);LAST=TICK-1||99;
@@ -454,13 +468,13 @@ function drawList(){$('lvl').textContent='LV '+(LV+1)+' · LISTA'+(lv(LV).cart?G
 function say(t,d=1.6){G.msgT=d;$('msg').textContent=t;$('msg').hidden=false}
 function intro(){const L=lv(LV),o=$('over');o.querySelector('h1').textContent='Livello '+(LV+1);
   $('overTxt').textContent=L.txt+' Hai '+L.time+' secondi.';$('choice').hidden=!L.cart;$('cta').textContent=L.cart?'Scegli: cestino o carrello':'Tocca PRENDI per iniziare'}
-function end(win){$('bil').hidden=true;$('choice').hidden=true;G.weighing=false;G.state=win?'win':'lose';G.pose=win?'win':'lose';G.poseT=1e9;$('over').hidden=false;$('over').querySelector('h1').textContent=win?'Livello '+(LV+1)+' superato!':'Il supermercato chiude!';$('cta').textContent=win?'Tocca PRENDI per il livello '+(LV+2):'Tocca PRENDI per riprovare il livello '+(LV+1);if(win){LV++;saveLV()}
-  $('overTxt').textContent=win?`Ce l'hai fatta con ${Math.ceil(G.time)} secondi di anticipo.`:`Ti mancavano: ${G.list.filter(e=>!e.got).map(e=>e.n.toLowerCase()).join(', ')}.`}
+function end(win){$('bil').hidden=true;$('choice').hidden=true;G.weighing=false;G.state=win?'win':'lose';G.pose=win?'win':'lose';G.poseT=1e9;$('over').hidden=false;$('over').querySelector('h1').textContent=win?'Livello '+(LV+1)+' superato!':'Il supermercato chiude!';$('cta').textContent=win?'Tocca PRENDI per tornare alla mappa':'Tocca PRENDI per riprovare il livello '+(LV+1);if(win){G.stars=starsOf(G.time/lv(LV).time);STARS[LV]=Math.max(STARS[LV]||0,G.stars);saveStars()}
+  $('overTxt').innerHTML=win?`<span class="bigstar">${stelle(G.stars)}</span>Ce l'hai fatta con ${Math.ceil(G.time)} secondi di anticipo.${G.stars<3?' Per '+(G.stars+1)+' stelle servono '+Math.ceil(lv(LV).time*(G.stars===1?.2:.4))+' secondi.':''}`:`Ti mancavano: ${G.list.filter(e=>!e.got).map(e=>e.n.toLowerCase()).join(', ')}.`}
 const nearScale=(r=110)=>!!SCALE&&Math.hypot(G.x-SCALE_STAND[0],(G.y-SCALE_STAND[1])*1.3)<r;
 function target(){const [gi,gj]=toTile(G.x,G.y);let best=null,bd=1.25;for(const s of SPOTS){const d=Math.hypot(s.i-gi,s.j-gj);if(d<bd){bd=d;best=s}}return best}
 function pick(){
-  if(!READY||!$('home').hidden)return;
-  if(!G||G.state!=='play'){if(G&&G.state!=='title'){start(false);G.state='title';$('over').hidden=false;intro();return}start(true);return}
+  if(!READY||!$('home').hidden||!$('mappa').hidden)return;
+  if(!G||G.state!=='play'){if(G&&G.state==='win')return showMap();if(G&&G.state!=='title'){start(false);G.state='title';$('over').hidden=false;intro();return}start(true);return}
   if(G.weighing||G.serving||G.till||G.slipT>0)return;
   if(nearMac('disp')&&!MQ.includes(G)){if(!needMeat())return say('La carne non è nella lista');takeTicket(G);act(G,'reach',.4);say('Hai preso il numero '+pad2(G.ticket));return beep(900,.06)}
   if(MQ.includes(G)&&nearMac('stand',140)){if(MQ[0]!==G){say('Hai il '+pad2(G.ticket)+': ora servono il '+pad2(MQ[0].ticket));return beep(180,.15,'sawtooth')}
@@ -475,7 +489,7 @@ function pick(){
   if(OUT&&OUT.t>0&&s.n===OUT.n){const e=G.list.find(e=>e.n===s.n);if(e&&!e.got&&e.alt){e.seen=true;drawList();return say(s.n+' esaurito! Rifornimento tra '+Math.ceil(OUT.t)+'s… oppure prendi '+e.alt,2.8)}return say(s.n+' esaurito')}
   const e=G.list.find(e=>e.n===s.n)||G.list.find(e=>e.alt===s.n&&e.seen&&!e.got);
   if(e&&!e.got&&!G.bag.includes(e.n)&&lv(LV).cart&&!G.cart&&load()>=4)return say('Cestino pieno! Il carrello lo prendi all\'ingresso',2.4);
-  if(!e){G.time-=5;act(G,'lose',.7);say('Non è in lista! -5s');return beep(150,.2,'sawtooth')}
+  if(!e){G.time-=3;act(G,'lose',.7);say('Non è in lista! -3s');return beep(150,.2,'sawtooth')}
   if(e.got)return say('Già nel cestino');
   if(G.bag.includes(e.n))return say('Ce l\'hai già nel sacchetto: va pesata');
   if(FRESH.has(e.n)){G.bag.push(e.n);act(G,'bend',.45);drawList();say(e.n+' nel sacchetto · codice '+CODE[e.n]);return beep(700,.06)}
@@ -486,7 +500,7 @@ const SHOVE_CD=5,SHOVE_R=230,MAD={baffi:'grab',mamma:'scold',anziano:'cane',raga
 function shove(){if(!G||G.state!=='play'||G.shoveT>0||G.weighing||G.serving)return;G.shoveT=SHOVE_CD;let hit=0;
   for(const n of NPC){if(n.weighing||n.serving)continue;const dx=n.x-G.x,dy=n.y-G.y,d=Math.hypot(dx,dy*1.6);if(d>SHOVE_R)continue;hit++;
     const k=1/(Math.hypot(dx,dy)||1);n.push={vx:dx*k*650,vy:dy*k*420,t:.3};n.path=[];n.pause=rnd(1.2,2);n.pose=MAD[n.who];n.front=true;n.flip=dx>0}
-  say(hit?'Permesso, permesso!':'Permesso!… ma non c\'è nessuno',1.2);beep(hit?260:200,.1,'square')}
+  if(hit)G.time-=3;say(hit?'Permesso, permesso! -3s':'Permesso!… ma non c\'è nessuno',1.2);beep(hit?260:200,.1,'square')}
 function checkDone(){if(G.list.every(e=>e.got))setTimeout(()=>G.state==='play'&&say('Ora vai alla cassa!'),1200)}
 function jump(){if(!G||G.state!=='play'||G.z>0||G.weighing||G.serving||G.till||G.slipT>0)return;if(G.cart)return say('Col carrello non si salta!');G.vz=520;G.z=1;beep(520,.07)}
 
@@ -520,7 +534,7 @@ function key(k){if(S.t>0)return;beep(900,.02);
   if(k==='C'){S.code='';return disp(S.plate?'CODICE?':'METTI SUL<br>PIATTO')}
   if(k!=='OK'){if(S.code.length<2)S.code+=k;return disp('COD. '+S.code.padEnd(2,'_'))}
   if(!S.plate)return disp('METTI SUL<br>PIATTO');if(!S.code)return disp('CODICE?');
-  if(S.code!==CODE[S.plate]){const o=Object.keys(CODE).find(n=>CODE[n]===S.code);G.time-=2;disp((o?S.code+' = '+o:'COD. '+S.code+' ?')+'<br>NO! -2s');S.code='';return beep(150,.25,'sawtooth')}
+  if(S.code!==CODE[S.plate]){const o=Object.keys(CODE).find(n=>CODE[n]===S.code);G.time-=3;disp((o?S.code+' = '+o:'COD. '+S.code+' ?')+'<br>NO! -3s');S.code='';return beep(150,.25,'sawtooth')}
   S.t=WEIGH;S.kg=rnd(.3,1.6);beep(660,.05)}
 function updBil(dt){if(!(S.t>0))return;S.t-=dt;const f=Math.min(1,1-S.t/WEIGH);$('bar').firstElementChild.style.width=f*100+'%';disp(kgs(S.kg*f+rnd(0,.04)));
   if(S.t>0)return;S.t=0;const n=S.plate,w={n,kg:S.kg,eur:S.kg*PRICE[n]};G.weighed.push(w);G.bag.splice(G.bag.indexOf(n),1);G.list.find(e=>e.n===n).got=true;S.plate=null;S.code='';
@@ -664,7 +678,7 @@ function render(now){
     ctx.strokeStyle='rgba(255,0,255,.5)';ctx.lineWidth=2;NODES.forEach((a,i)=>ADJ[i].forEach(j=>{if(j>i){ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...NODES[j]);ctx.stroke()}}))}
 }
 // CARICAMENTO: controlla se su internet c'è una versione nuova (VER più alto) e intanto carica immagini e font. Ogni cosa pronta = un pezzo di barra.
-const VER=50; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
+const VER=51; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
 const checkUpd=()=>Promise.race([new Promise(r=>setTimeout(r,3000)),fetch(location.pathname+'?nv='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{
   const v=+(t.match(/const VER=(\d+)/)||[])[1];if(v>VER&&!location.search.includes('v='+v)){$('loadTxt').textContent='Versione nuova! La scarico…';location.replace(location.pathname+'?v='+v+location.hash);return new Promise(()=>{})}
   $('loadTxt').textContent='Gioco aggiornato ✓'})]).catch(()=>{}); // nell'Artifact il controllo non funziona: si va avanti
@@ -680,23 +694,39 @@ requestAnimationFrame(loop);
 // ---------- menu: audio e 3 slot di salvataggio (si salva il livello raggiunto, non la partita a metà)
 const slotKey=k=>'nonna-slot-'+k,readSlot=k=>{try{return JSON.parse(localStorage.getItem(slotKey(k)))}catch{return null}};
 function drawMenu(){$('audio').textContent='AUDIO: '+(AUDIO?'SÌ 🔊':'NO 🔇');
-  $('slots').innerHTML=[1,2,3].map(k=>{const v=readSlot(k);return `<div class="slot"><span>${k} · ${v?'Livello '+(v.lv+1)+' <small>'+new Date(v.t).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+'</small>':'vuoto'}</span><button data-s="${k}">SALVA</button><button data-l="${k}" ${v?'':'disabled'}>CARICA</button></div>`}).join('')}
+  $('slots').innerHTML=[1,2,3].map(k=>{const v=readSlot(k);return `<div class="slot"><span>${k} · ${v?'★ '+(v.stars||Array(v.lv).fill(1)).reduce((a,b)=>a+(b||0),0)+' <small>'+new Date(v.t).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+'</small>':'vuoto'}</span><button data-s="${k}">SALVA</button><button data-l="${k}" ${v?'':'disabled'}>CARICA</button></div>`}).join('')}
 $('gear').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();drawMenu();$('menu').hidden=false});
 $('menu').addEventListener('pointerdown',e=>{e.stopPropagation();const b=e.target.closest('button');if(!b){if(e.target===$('menu'))$('menu').hidden=true;return}e.preventDefault();
   if(b.id==='chiudi')$('menu').hidden=true;
+  else if(b.id==='amappa'){$('menu').hidden=true;showMap();return}
   else if(b.id==='audio'){AUDIO=!AUDIO;try{localStorage.setItem('nonna-audio',AUDIO?'1':'0')}catch{}beep(880)}
-  else if(b.dataset.s){try{localStorage.setItem(slotKey(b.dataset.s),JSON.stringify({lv:LV,t:Date.now()}))}catch{}beep(880)}
-  else if(b.dataset.l){const v=readSlot(b.dataset.l);if(v){LV=v.lv;saveLV();$('bil').hidden=true;$('home').hidden=true;start(false);G.state='title';$('over').hidden=false;intro();$('menu').hidden=true;beep(660);return}}
+  else if(b.dataset.s){try{localStorage.setItem(slotKey(b.dataset.s),JSON.stringify({lv:LV,stars:STARS,t:Date.now()}))}catch{}beep(880)}
+  else if(b.dataset.l){const v=readSlot(b.dataset.l);if(v){LV=v.lv;saveLV();STARS=v.stars||Array(v.lv).fill(1);saveStars();$('menu').hidden=true;showMap();beep(660);return}}
   drawMenu()});
+// ---------- MAPPA: piccola città, 8 nodi = livelli 1-8. Un nodo si apre quando il precedente ha almeno una stella.
+const CITY={name:'PICCOLA CITTÀ',first:0,nodes:[[50,91],[24,81],[46,70],[76,61],[60,48],[27,39],[42,25],[70,13]]};
+const ALL=/lv=/.test(location.hash); // col link #lv=N tutto aperto, per provare
+function showMap(){if(G)G.state='title';$('bil').hidden=$('over').hidden=$('home').hidden=$('menu').hidden=true;$('mappa').hidden=false;
+  const N=CITY.nodes,open=k=>ALL||k===0||(STARS[CITY.first+k-1]||0)>0,qui=Math.max(0,N.findIndex((p,k)=>open(k)&&!STARS[CITY.first+k])),[qx,qy]=N[qui<0?N.length-1:qui];
+  $('mstars').textContent='★ '+STARS.reduce((a,b)=>a+(b||0),0)+'/'+N.length*3;
+  $('mbox').innerHTML=`<svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="${N.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#e8d8a8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><polyline points="${N.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#fff" stroke-width=".6" stroke-dasharray="2 2"/></svg>`
+    +N.map(([x,y],k)=>{const n=CITY.first+k,st=STARS[n]||0;return `<button class="nodo${open(k)?'':' chiuso'}${k===qui?' qui':''}" data-n="${n}" style="left:${x}%;top:${y}%">${open(k)?n+1:'🔒'}${open(k)?'<b>'+stelle(st)+'</b>':''}</button>`}).join('')
+    +`<img id="mnonna" src="icon-192.png" style="left:${qx}%;top:${qy}%">`;
+  requestAnimationFrame(()=>$('mbox').querySelector('.qui')?.scrollIntoView({block:'center'}))}
+$('mappa').addEventListener('pointerdown',e=>e.stopPropagation());
+$('mappa').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.id==='mmenu'){$('mappa').hidden=true;showHome();return}
+  if(b.classList.contains('chiuso'))return beep(150,.15,'sawtooth');
+  LV=+b.dataset.n;saveLV();start(false);G.state='title';$('mappa').hidden=true;$('over').hidden=false;intro();beep(660)});
 // ---------- menu iniziale: la nonna col carrello attraversa la scena, sotto i quattro pulsanti
 const HN={who:'nonnac',x:-100,y:165,front:true,moving:true,walk:0};
 function drawHome(dt){const c=$('hcv').getContext('2d');c.clearRect(0,0,380,170);HN.x+=90*dt;HN.walk+=dt*6;if(HN.x>480)HN.x=-100;
   const [sx,sy,w,h,ax,ay]=PG['nonnac:'+frameOf(HN)];c.imageSmoothingEnabled=true;c.drawImage(atlas,sx,sy,w,h,HN.x-ax*.78,HN.y-ay*.78,w*.78,h*.78)}
-function showHome(){$('over').hidden=true;$('home').hidden=DEBUG;$('hCont').innerHTML='CONTINUA PARTITA<small>Livello '+(LV+1)+'</small>';$('hCont').disabled=LV===0;$('hAudio').textContent='AUDIO: '+(AUDIO?'SÌ 🔊':'NO 🔇')}
-const play=()=>{$('home').hidden=true;$('over').hidden=false;intro();beep(660)};
+function showHome(){$('over').hidden=true;$('home').hidden=DEBUG;const tot=STARS.reduce((a,b)=>a+(b||0),0);$('hCont').innerHTML='CONTINUA PARTITA<small>★ '+tot+'</small>';$('hCont').disabled=!tot;$('hAudio').textContent='AUDIO: '+(AUDIO?'SÌ 🔊':'NO 🔇')}
+
 $('home').addEventListener('pointerdown',e=>{e.stopPropagation();const b=e.target.closest('button');if(!b)return;e.preventDefault();
-  if(b.id==='hNuova'){LV=0;saveLV();start(false);G.state='title';play()}
-  else if(b.id==='hCont')play();
+  if(b.id==='hNuova'){LV=0;saveLV();STARS=[];saveStars();showMap()}
+  else if(b.id==='hCont')showMap();
   else if(b.id==='hCarica'){drawMenu();$('menu').hidden=false}
   else{AUDIO=!AUDIO;try{localStorage.setItem('nonna-audio',AUDIO?'1':'0')}catch{}showHome();beep(880)}});
 </script>
