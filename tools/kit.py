@@ -86,10 +86,12 @@ PIECES |= full(VUO, .7, None, [('v:cesta', (194, 1233, 739, 1916), (194, 1761), 
 PIECES |= full(VUO, 2, None, [('v:bancale', (1147, 1376, 1961, 1914), (1147, 1704), (1533, 1913))])
 
 # macelleria lunga: 3 segmenti di bancone da 2,5 caselle, messi in fila (7,5 caselle + distributore)
-PIECES |= full(MC2, 2.5, None, [('mac1', (60, 505, 790, 1255), (129, 987), (580, 1246)),
-  ('mac2', (925, 466, 1655, 1245), (994, 972), (1445, 1234))])
-# il 3° nel foglio è più corto (417 px contro 451): stessa scala degli altri, quindi meno caselle, così l'altezza combacia
-PIECES |= full(MC2, 2.5 * 417 / 451, None, [('mac3', (1775, 484, 2505, 1270), (1844, 1020), (2261, 1261))])
+# nel foglio i 3 banconi hanno altezze diverse (fianco: 355, 382, 393 px): li porto tutti all'altezza del 2°
+# con la stessa scala in orizzontale e in verticale, quindi cambia solo quante caselle occupa ciascuno (L)
+for n, box, A, B, h in [('mac1', (60, 505, 790, 1255), (129, 987), (580, 1246), 355),
+                        ('mac2', (925, 466, 1655, 1245), (994, 972), (1445, 1234), 382),
+                        ('mac3', (1775, 484, 2505, 1270), (1844, 1020), (2261, 1261), 393)]:
+    PIECES |= full(MC2, round(2.5 * (B[0] - A[0]) / 451 * 382 / h, 3), None, [(n, box, A, B)])
 
 # testate: metà destra dello scaffale pieno (1 casella, col fianco)
 PIECES |= {'t:' + n[2:]: dict(p, box=((p['A'][0] + p['B'][0]) // 2, *p['box'][1:]), A=((p['A'][0] + p['B'][0]) // 2, (p['A'][1] + p['B'][1]) // 2), L=1)
