@@ -27,12 +27,12 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 #mtop{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--paper);border-bottom:4px solid var(--ink);color:var(--ink);font-size:22px}
 #mtop b{flex:1;color:var(--red)}#mtop span{color:#c88a00}#mtop button{font:20px "Gioco",monospace;border:3px solid var(--ink);border-radius:5px;background:#fff;color:var(--ink)}
 #mbox{position:relative;width:min(100vw,520px);aspect-ratio:1193/2576;margin:0 auto;background:url(mappa-citta1.jpg?v=3) center/100% 100%}
-.nodo{position:absolute;transform:translate(-50%,-50%);width:18%;aspect-ratio:1.45;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid #1c3a24;border-radius:50%;background:#f5eedc;filter:drop-shadow(0 3px 0 rgba(0,0,0,.4));color:var(--ink);font:800 22px "Gioco",monospace;line-height:1;padding:0 0 2px} /* ovale unico: numero sopra, stelle sotto; copre il cerchio disegnato */
-.nodo.chiuso{background:#a9b2a8;font-size:18px}.nodo.chiuso b{opacity:.35}.nodo.qui{box-shadow:0 0 0 4px #ffc400,0 0 16px 6px #ffe680;animation:pulsa .7s infinite alternate}@keyframes pulsa{to{transform:translate(-50%,-50%) scale(1.12)}}
-.nodo b{display:block;margin-top:1px;pointer-events:none}
-#mnonna{position:absolute;width:58px;transform:translate(-50%,-142%);border-radius:50%;border:3px solid var(--ink);pointer-events:none}
+.nodo{position:absolute;transform:translate(-50%,-50%);width:14%;aspect-ratio:1.8;border:0;border-radius:50%;background:none;color:var(--ink);font:800 26px "Gioco",monospace;padding:0} /* il cerchio è nel disegno: il pulsante è trasparente sopra */
+.nodo.chiuso{background:rgba(70,86,76,.6);font-size:16px}.nodo.qui{box-shadow:0 0 0 4px #ffc400,0 0 16px 6px #ffe680;animation:pulsa .7s infinite alternate}@keyframes pulsa{to{transform:translate(-50%,-50%) scale(1.12)}}
+.nodo b{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:-5px;pointer-events:none;background:#f5eedc;border:3px solid #1c3a24;border-radius:4px 4px 12px 12px;padding:0 4px 2px;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+#mnonna{position:absolute;width:58px;transform:translate(-50%,-125%);border-radius:50%;border:3px solid var(--ink);pointer-events:none}
 /* stelle: tre a semicerchio, quella centrale più grande e più alta */
-.stelle{display:flex;align-items:flex-end;justify-content:center}.stelle svg{width:32px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.45))}.stelle svg:nth-child(2){width:42px;margin:0 -4px 8px}/* sulla mappa: stelle piccole in una cornicetta appesa sotto al cerchio */.nodo .stelle svg{width:15px;filter:none}.nodo .stelle svg:nth-child(2){width:19px;margin:0 0 2px}.nodo .stelle .off path{fill:#c9c1a5;opacity:1}
+.stelle{display:flex;align-items:flex-end;justify-content:center}.stelle svg{width:32px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.45))}.stelle svg:nth-child(2){width:42px;margin:0 -4px 8px}/* sulla mappa: stelle piccole in una cornicetta appesa sotto al cerchio */.nodo .stelle svg{width:19px;filter:none}.nodo .stelle svg:nth-child(2){width:23px;margin:0 0 2px}.nodo .stelle .off path{fill:#c9c1a5;opacity:1}
 .stelle path{stroke:#1c3a24;stroke-width:1.8;stroke-linejoin:round}.stelle .on path{fill:url(#gStella)}.stelle .off path{fill:#d8d0b4;opacity:.85}
 .bigstar{margin:2px 0 8px}.bigstar svg{width:58px}.bigstar svg:nth-child(2){width:76px;margin:0 -4px 14px}
 #over[hidden]{display:none}
@@ -713,7 +713,7 @@ const ALL=/lv=/.test(location.hash); // col link #lv=N tutto aperto, per provare
 function showMap(){if(G)G.state='title';$('bil').hidden=$('over').hidden=$('home').hidden=$('menu').hidden=true;$('mappa').hidden=false;
   const N=CITY.nodes,open=k=>ALL||k===0||(STARS[CITY.first+k-1]||0)>0,qui=Math.max(0,N.findIndex((p,k)=>open(k)&&!STARS[CITY.first+k])),[qx,qy]=N[qui<0?N.length-1:qui];
   $('mstars').textContent='★ '+STARS.reduce((a,b)=>a+(b||0),0)+'/'+N.length*3;
-  $('mbox').innerHTML=N.map(([x,y],k)=>{const n=CITY.first+k,st=STARS[n]||0;return `<button class="nodo${open(k)?'':' chiuso'}${k===qui?' qui':''}" data-n="${n}" style="left:${x}%;top:${y}%">${open(k)?n+1:'🔒'}<b>${stelle(st)}</b></button>`}).join('')
+  $('mbox').innerHTML=N.map(([x,y],k)=>{const n=CITY.first+k,st=STARS[n]||0;return `<button class="nodo${open(k)?'':' chiuso'}${k===qui?' qui':''}" data-n="${n}" style="left:${x}%;top:${y}%">${open(k)?n+1:'🔒'}${open(k)?'<b>'+stelle(st)+'</b>':''}</button>`}).join('')
     +`<img id="mnonna" src="icon-192.png" style="left:${qx}%;top:${qy}%">`;
   requestAnimationFrame(()=>$('mbox').querySelector('.qui')?.scrollIntoView({block:'center'}))}
 $('mappa').addEventListener('pointerdown',e=>e.stopPropagation());
