@@ -256,12 +256,13 @@ function tryLevel(){
   // casse vicino all'angolo destro, con la cassiera
   for(const [j,row] of [[3,3],[6,1]]){put(mk('cassa','i',R-3,j,3,2,{row}))}
   // centro: zona frutta (banchi da 2 cassette) e zona scaffali doppi; quale sta davanti è a caso
-  const fruitBack=Math.random()<.5,fruitRows=fruitBack?[6,11]:[C-8,C-3],gz=fruitBack?[16,C-3]:[6,C-13];
+  // zona BASSA lungo la parete sinistra (macelleria, pane, formaggi sono banchi bassi): solo cassette di frutta e bilancia,
+  // così dalla telecamera non li copre niente; gli scaffali ALTI stanno dietro, verso la parete destra coi frighi (alti anche loro)
   const fresh=shuffle(Object.keys(FRUIT));let fk=0;
-  const gaps=[];for(const j of fruitRows)for(let i=6;i+2<=(j>=10?R-2:R-5);i+=5){put(mk('frutta','i',i,j,2,1,{items:[fresh[fk++%fresh.length],fresh[fk++%fresh.length]]}));if(j===fruitRows[0]&&i+2<=R-6)gaps.push(i+2)}
-  const gi=gaps[ri(gaps.length)],sj=fruitRows[0];if(L.fresh)put(mk('bilancia','i',gi,sj,1,1));
-  if(Math.random()<.5)for(let j=gz[0];j<=gz[1];j+=5)for(let i=6+ri(2),e=j>=10?R-2:R-5;i+4<=e;i+=6+ri(2))put(mk('scaffale','i',i,j,4,1,{cat:packs[pk++%packs.length]}))
-  else for(let i=6;i<=R-6;i+=5)for(let j=gz[0]+ri(2);j+4<=gz[1]+1;j+=6+ri(2))put(mk('scaffale','j',i,j,4,1,{cat:packs[pk++%packs.length]}))
+  const FC=[6,10],gaps=[];for(const i of FC)for(let j=6;j+2<=C-4;j+=5){put(mk('frutta','j',i,j,2,1,{items:[fresh[fk++%fresh.length],fresh[fk++%fresh.length]]}));if(i===FC[0]&&j+4<=C-4)gaps.push(j+2)}
+  const gi=FC[0],sj=gaps[ri(gaps.length)];if(L.fresh)put(mk('bilancia','i',gi,sj,1,1));
+  if(Math.random()<.5)for(let j=6;j<=C-3;j+=5)for(let i=15+ri(2),e=j>=10?R-2:R-5;i+4<=e;i+=6+ri(2))put(mk('scaffale','i',i,j,4,1,{cat:packs[pk++%packs.length]}))
+  else for(let i=15;i<=R-6;i+=5)for(let j=6+ri(2);j+4<=C-2;j+=6+ri(2))put(mk('scaffale','j',i,j,4,1,{cat:packs[pk++%packs.length]}))
   // ponytail: niente testate (il foglio non le ha fatte da 1 casella); i pezzi t: restano nell'atlante se tornano
   // bancali e ceste solo in mezzo a spazi aperti (tutt'intorno libero), così non chiudono le corsie
   // ...e mai a ridosso dell'ingresso (casella R-2,C-2), dove nasce la nonna
