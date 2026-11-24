@@ -17,6 +17,7 @@ FRI = alpha('kit/foglio-frighi.jpg')
 CAS = alpha('kit/foglio-cassette.jpg')
 BAN = alpha('kit/foglio-banchi.jpg')
 CES = alpha('kit/foglio-ceste.jpg')
+VUO = alpha('kit/foglio-vuoti.jpg')
 
 # il foglio mobili ha righe chiare del pavimento sotto lo scaffale doppio: lì uso una soglia più larga
 def loose(img, box):
@@ -77,9 +78,15 @@ PIECES |= full(CAS, 1, None, [
   ('c:UVA', (196, 1404, 604, 1882), (196, 1775), (404, 1881)), ('c:CAVOLI', (820, 1428, 1228, 1882), (820, 1775), (1027, 1881)),
   ('c:CAROTE', (1446, 1404, 1853, 1882), (1446, 1775), (1653, 1881))])
 
+# vuoti per l'esaurito: lo scaffale stretto del foglio ha la stessa forma di quelli pieni (quello largo non lo uso)
+PIECES |= full(VUO, 2, .42, [('v:scaffale', (864, 137, 1190, 921), (864, 778), (1093, 920))])
+PIECES |= full(VUO, 2, .45, [('v:frigo', (1411, 104, 1943, 1034), (1411, 833), (1783, 1033))])
+PIECES |= full(VUO, .7, None, [('v:cesta', (194, 1233, 739, 1916), (194, 1761), (468, 1915))])
+PIECES |= full(VUO, 2, None, [('v:bancale', (1147, 1376, 1961, 1914), (1147, 1704), (1533, 1913))])
+
 # testate: metà destra dello scaffale pieno (1 casella, col fianco)
 PIECES |= {'t:' + n[2:]: dict(p, box=((p['A'][0] + p['B'][0]) // 2, *p['box'][1:]), A=((p['A'][0] + p['B'][0]) // 2, (p['A'][1] + p['B'][1]) // 2), L=1)
-           for n, p in list(PIECES.items()) if n.startswith('s:')}
+           for n, p in list(PIECES.items()) if n.startswith('s:') or n == 'v:scaffale'}
 PIECES |= full(CES, .7, None, [(n, (x0, y0, x1, y1), (x0 + 15, yl), B) for n, (x0, y0, x1, y1), yl, B in [
   ('k:PASTA', (68, 235, 431, 888), 790, (249, 887)), ('k:BISCOTTI', (463, 240, 812, 888), 790, (636, 887)),
   ('k:CEREALI', (850, 235, 1199, 888), 790, (1024, 887)), ('k:CONSERVE', (1237, 286, 1586, 888), 790, (1410, 887)),
