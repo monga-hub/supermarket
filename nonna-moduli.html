@@ -27,12 +27,12 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 #mtop{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--paper);border-bottom:4px solid var(--ink);color:var(--ink);font-size:22px}
 #mtop b{flex:1;color:var(--red)}#mtop span{color:#c88a00}#mtop button{font:20px "Gioco",monospace;border:3px solid var(--ink);border-radius:5px;background:#fff;color:var(--ink)}
 #mbox{position:relative;width:min(100vw,520px);aspect-ratio:1193/2576;margin:0 auto;background:url(mappa-citta1.jpg?v=3) center/100% 100%}
-.nodo{position:absolute;transform:translate(-50%,-50%);min-width:15%;display:flex;flex-direction:column;align-items:center;border:3px solid #1c3a24;border-radius:16px;background:#f5eedc;filter:drop-shadow(0 3px 0 rgba(0,0,0,.4));color:var(--ink);font:800 24px "Gioco",monospace;line-height:1;padding:2px 6px 3px} /* targa unica: numero sopra, stelle sotto; copre il cerchio disegnato */
+.nodo{position:absolute;transform:translate(-50%,-50%);width:18%;aspect-ratio:1.45;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid #1c3a24;border-radius:50%;background:#f5eedc;filter:drop-shadow(0 3px 0 rgba(0,0,0,.4));color:var(--ink);font:800 22px "Gioco",monospace;line-height:1;padding:0 0 2px} /* ovale unico: numero sopra, stelle sotto; copre il cerchio disegnato */
 .nodo.chiuso{background:#a9b2a8;font-size:18px}.nodo.chiuso b{opacity:.35}.nodo.qui{box-shadow:0 0 0 4px #ffc400,0 0 16px 6px #ffe680;animation:pulsa .7s infinite alternate}@keyframes pulsa{to{transform:translate(-50%,-50%) scale(1.12)}}
 .nodo b{display:block;margin-top:1px;pointer-events:none}
-#mnonna{position:absolute;width:58px;transform:translate(-50%,-125%);border-radius:50%;border:3px solid var(--ink);pointer-events:none}
+#mnonna{position:absolute;width:58px;transform:translate(-50%,-142%);border-radius:50%;border:3px solid var(--ink);pointer-events:none}
 /* stelle: tre a semicerchio, quella centrale più grande e più alta */
-.stelle{display:flex;align-items:flex-end;justify-content:center}.stelle svg{width:32px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.45))}.stelle svg:nth-child(2){width:42px;margin:0 -4px 8px}/* sulla mappa: stelle piccole in una cornicetta appesa sotto al cerchio */.nodo .stelle svg{width:19px;filter:none}.nodo .stelle svg:nth-child(2){width:23px;margin:0 0 2px}.nodo .stelle .off path{fill:#c9c1a5;opacity:1}
+.stelle{display:flex;align-items:flex-end;justify-content:center}.stelle svg{width:32px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.45))}.stelle svg:nth-child(2){width:42px;margin:0 -4px 8px}/* sulla mappa: stelle piccole in una cornicetta appesa sotto al cerchio */.nodo .stelle svg{width:15px;filter:none}.nodo .stelle svg:nth-child(2){width:19px;margin:0 0 2px}.nodo .stelle .off path{fill:#c9c1a5;opacity:1}
 .stelle path{stroke:#1c3a24;stroke-width:1.8;stroke-linejoin:round}.stelle .on path{fill:url(#gStella)}.stelle .off path{fill:#d8d0b4;opacity:.85}
 .bigstar{margin:2px 0 8px}.bigstar svg{width:58px}.bigstar svg:nth-child(2){width:76px;margin:0 -4px 14px}
 #over[hidden]{display:none}
@@ -682,7 +682,7 @@ function render(now){
     ctx.strokeStyle='rgba(255,0,255,.5)';ctx.lineWidth=2;NODES.forEach((a,i)=>ADJ[i].forEach(j=>{if(j>i){ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...NODES[j]);ctx.stroke()}}))}
 }
 // CARICAMENTO: controlla se su internet c'è una versione nuova (VER più alto) e intanto carica immagini e font. Ogni cosa pronta = un pezzo di barra.
-const VER=59; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
+const VER=60; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
 const checkUpd=()=>Promise.race([new Promise(r=>setTimeout(r,3000)),fetch(location.pathname+'?nv='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{
   const v=+(t.match(/const VER=(\d+)/)||[])[1];if(v>VER&&!location.search.includes('v='+v)){$('loadTxt').textContent='Versione nuova! La scarico…';location.replace(location.pathname+'?v='+v+location.hash);return new Promise(()=>{})}
   $('loadTxt').textContent='Gioco aggiornato ✓'})]).catch(()=>{}); // nell'Artifact il controllo non funziona: si va avanti
