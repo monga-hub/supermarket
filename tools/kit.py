@@ -12,6 +12,9 @@ MOB2 = alpha('kit/foglio-mobili2.jpg')
 PRO2 = alpha('kit/foglio-prodotti2.jpg')
 MAC = alpha('kit/foglio-macelleria.jpg')
 EXT = alpha('kit/foglio-extra.jpg')
+SCA = alpha('kit/foglio-scaffali.jpg')
+FRI = alpha('kit/foglio-frighi.jpg')
+CAS = alpha('kit/foglio-cassette.jpg')
 
 # il foglio mobili ha righe chiare del pavimento sotto lo scaffale doppio: lì uso una soglia più larga
 def loose(img, box):
@@ -52,6 +55,26 @@ PIECES = {
   'display':    dict(sheet=MAC, box=(1475, 130, 1880, 535), A=(1482, 357), B=(1797, 530), L=1.32),
   'insegna':    dict(sheet=MAC, box=(1475, 555, 1878, 1035), A=(1482, 826), B=(1862, 1022), L=1.6),
 }
+# mobili già pieni (un foglio per tipo): box, A = angolo anteriore-basso a sinistra, B = punto più basso
+def full(sheet, L, sv, items):
+    return {n: dict(sheet=sheet, box=(x0 - 4, y0 - 4, x1 + 4, y1 + 4), A=A, B=B, L=L, sv=sv) for n, (x0, y0, x1, y1), A, B in items}
+PIECES |= full(SCA, 2, .42, [  # scaffale da 2 caselle, ripetuto lungo il mobile
+  ('s:PASTA', (85, 137, 413, 921), (85, 775), (316, 920)), ('s:BISCOTTI', (475, 137, 801, 921), (475, 776), (704, 920)),
+  ('s:CEREALI', (864, 119, 1190, 921), (864, 775), (1093, 920)), ('s:CONSERVE', (1253, 137, 1579, 921), (1253, 776), (1484, 920)),
+  ('s:CAFFÈ', (1640, 137, 1966, 921), (1640, 777), (1871, 920)),
+  ('s:OLIO', (85, 1097, 413, 1924), (85, 1787), (314, 1923)), ('s:VINO', (475, 1097, 802, 1924), (475, 1787), (703, 1923)),
+  ('s:ACQUA', (863, 1098, 1190, 1924), (863, 1790), (1090, 1923)), ('s:BIBITE', (1251, 1097, 1579, 1924), (1251, 1787), (1480, 1923)),
+  ('s:RISO', (1637, 1097, 1967, 1924), (1637, 1787), (1869, 1923))])
+PIECES |= full(FRI, 2, .45, [  # dal foglio: 1° in alto, 2° in alto, 3° e 4° in basso
+  ('f:LATTE', (158, 158, 649, 965), (158, 792), (497, 964)), ('f:YOGURT', (1052, 212, 1474, 965), (1052, 817), (1344, 964)),
+  ('f:SUCCHI', (1048, 1049, 1474, 1799), (1048, 1646), (1350, 1798)), ('f:BURRO', (1521, 1068, 1938, 1816), (1521, 1668), (1812, 1815))])
+PIECES |= full(CAS, 1, None, [
+  ('c:MELE', (196, 161, 605, 628), (196, 517), (409, 627)), ('c:BANANE', (825, 155, 1233, 628), (825, 517), (1035, 627)),
+  ('c:ARANCE', (1453, 172, 1861, 628), (1453, 518), (1664, 627)), ('c:POMODORI', (197, 791, 604, 1258), (197, 1147), (406, 1257)),
+  ('c:INSALATA', (820, 790, 1228, 1258), (820, 1147), (1031, 1257)), ('c:BROCCOLI', (1445, 790, 1853, 1258), (1445, 1147), (1655, 1257)),
+  ('c:UVA', (196, 1404, 604, 1882), (196, 1775), (404, 1881)), ('c:CAVOLI', (820, 1428, 1228, 1882), (820, 1775), (1027, 1881)),
+  ('c:CAROTE', (1446, 1404, 1853, 1882), (1446, 1775), (1653, 1881))])
+
 PRODS = {  # riquadri trovati per righe/colonne vuote; h = altezza finale in px di gioco
   'ACQUA': ((140, 107, 241, 543), 34), 'VINO': ((327, 107, 440, 543), 40), 'OLIO': ((531, 107, 657, 543), 34),
   'BIBITE': ((754, 107, 883, 543), 22), 'CONSERVE': ((978, 107, 1142, 543), 22), 'BISCOTTI': ((1231, 107, 1428, 543), 26),  'CAFFÈ': ((130, 629, 374, 1042), 28), 'CEREALI': ((451, 629, 689, 1042), 34),
