@@ -220,9 +220,10 @@ const KIT={
   frutta(c,m){const mir=m.ax==='j';m.items.forEach((n,k)=>{crates(c,m,k,2);const [ax,ay]=anchor(m,1,k),big=['INSALATA','CAVOLI','BROCCOLI'].includes(n);
     // mucchio: tante copie del frutto sulla cassetta di sopra, dal fondo in avanti, più alto al centro
     const P=(u,v,h)=>{const lx=u*58+(1-v)*58,ly=u*30-(1-v)*30-h;return [ax+(mir?-lx:lx),ay+ly]},pts=[];
-    for(const u of [.22,.5,.78])for(const v of [.22,.5,.78])pts.push([u+rnd(-.05,.05),v+rnd(-.05,.05)]);if(!big)for(const [u,v] of [[.36,.36],[.64,.64],[.36,.64],[.64,.36]])pts.push([u,v]);
+    // ponytail: pochi pezzi grandi a mucchio che sporge dal bordo: si riconoscono meglio sul telefono
+    for(const u of [.28,.72])for(const v of [.28,.72])pts.push([u+rnd(-.04,.04),v+rnd(-.04,.04),0]);pts.push([.5,.5,14]);if(!big)pts.push([.5,.82,4],[.82,.5,4]);
     pts.sort((p,q)=>p[0]+p[1]-q[0]-q[1]);
-    for(const [u,v] of pts){const bump=(1-Math.hypot(u-.5,v-.5)*1.6)*10,[x,y]=P(u,v,2*CRATE-14+bump);spr(c,'p:'+n+':0',x,y,Math.random()<.5,big?.4:.345)}
+    for(const [u,v,up] of pts){const [x,y]=P(u,v,2*CRATE-10+up);spr(c,'p:'+n+':0',x,y,Math.random()<.5,big?.56:.5)}
     const [cx,cy]=P(.5,1,CRATE+14);c.fillStyle='#2a1c14';c.fillRect(cx-11,cy-8,22,14);c.fillStyle='#f4f8e8';c.fillRect(cx-9,cy-6,18,10);c.fillStyle='#d83030';c.fillRect(cx-7,cy-4,14,3)});m.labelH=120},
   cassa(c,m){const [x,y]=anchor(m,FV.cassa2);spr(c,'cassa2',x,y,m.ax==='j')},
   salumi(c,m){const [x,y]=anchor(m,FV.salumi),mir=m.ax==='j';spr(c,'salumi',x,y,mir);heap(c,m,FV.salumi,0,'FORMAGGI',[.3,.6,.9,1.2,1.5,1.8,2.1,2.4,2.7],[.7,.5,.3],50,.5,1);
