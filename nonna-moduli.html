@@ -240,7 +240,7 @@ const TALL={macelleria:440,scaffale:300,frigo:330,frutta:170,pane:260,cassa:260,
 // GENERATORE: mette i moduli sulla griglia secondo poche regole e controlla che tutto sia raggiungibile.
 // ===================================================================================
 function tryLevel(){
-  R=24+ri(3);C=27+ri(2);/* corsie larghe 4 caselle: più respiro tra scaffali alti */CELL=Array.from({length:R},()=>Array(C).fill(-1));MODS=[];CASSE=[];
+  R=26+ri(3);C=29+ri(2);/* corsie larghe 4 caselle, 5 lungo le pareti: i banchi a muro restano visibili */CELL=Array.from({length:R},()=>Array(C).fill(-1));MODS=[];CASSE=[];
   const mk=(type,ax,i,j,L,D,x)=>Object.assign({type,ax,i,j,L,D,w:ax==='i'?L:D,d:ax==='i'?D:L},x);
   const put=m=>{for(let a=m.i;a<m.i+m.w;a++)for(let b=m.j;b<m.j+m.d;b++)if(!free(a,b))return false;
     for(let a=m.i;a<m.i+m.w;a++)for(let b=m.j;b<m.j+m.d;b++)CELL[a][b]=MODS.length;MODS.push(m);return true};
@@ -256,18 +256,18 @@ function tryLevel(){
   // casse vicino all'angolo destro, con la cassiera
   for(const [j,row] of [[3,3],[6,1]]){put(mk('cassa','i',R-3,j,3,2,{row}))}
   // centro: zona frutta (banchi da 2 cassette) e zona scaffali doppi; quale sta davanti è a caso
-  const fruitBack=Math.random()<.5,fruitRows=fruitBack?[4,9]:[C-8,C-3],gz=fruitBack?[14,C-3]:[4,C-13];
+  const fruitBack=Math.random()<.5,fruitRows=fruitBack?[6,11]:[C-8,C-3],gz=fruitBack?[16,C-3]:[6,C-13];
   const fresh=shuffle(Object.keys(FRUIT));let fk=0;
-  const gaps=[];for(const j of fruitRows)for(let i=4;i+2<=(j>=10?R-2:R-5);i+=5){put(mk('frutta','i',i,j,2,1,{items:[fresh[fk++%fresh.length],fresh[fk++%fresh.length]]}));if(j===fruitRows[0]&&i+2<=R-6)gaps.push(i+2)}
+  const gaps=[];for(const j of fruitRows)for(let i=6;i+2<=(j>=10?R-2:R-5);i+=5){put(mk('frutta','i',i,j,2,1,{items:[fresh[fk++%fresh.length],fresh[fk++%fresh.length]]}));if(j===fruitRows[0]&&i+2<=R-6)gaps.push(i+2)}
   const gi=gaps[ri(gaps.length)],sj=fruitRows[0];if(L.fresh)put(mk('bilancia','i',gi,sj,1,1));
-  if(Math.random()<.5)for(let j=gz[0];j<=gz[1];j+=5)for(let i=4+ri(2),e=j>=10?R-2:R-5;i+4<=e;i+=6+ri(2))put(mk('scaffale','i',i,j,4,1,{cat:packs[pk++%packs.length]}))
-  else for(let i=4;i<=R-6;i+=5)for(let j=gz[0]+ri(2);j+4<=gz[1]+1;j+=6+ri(2))put(mk('scaffale','j',i,j,4,1,{cat:packs[pk++%packs.length]}))
+  if(Math.random()<.5)for(let j=gz[0];j<=gz[1];j+=5)for(let i=6+ri(2),e=j>=10?R-2:R-5;i+4<=e;i+=6+ri(2))put(mk('scaffale','i',i,j,4,1,{cat:packs[pk++%packs.length]}))
+  else for(let i=6;i<=R-6;i+=5)for(let j=gz[0]+ri(2);j+4<=gz[1]+1;j+=6+ri(2))put(mk('scaffale','j',i,j,4,1,{cat:packs[pk++%packs.length]}))
   // ponytail: niente testate (il foglio non le ha fatte da 1 casella); i pezzi t: restano nell'atlante se tornano
   // bancali e ceste solo in mezzo a spazi aperti (tutt'intorno libero), così non chiudono le corsie
   // ...e mai a ridosso dell'ingresso (casella R-2,C-2), dove nasce la nonna
-  const open=(a,b,w,d)=>{if(a+w>=R-3&&b+d>=C-3)return false;if(a<=4&&b+d>=mj-1&&b<=mj+5)return false; // né davanti alla macelleria
+  const open=(a,b,w,d)=>{if(a+w>=R-3&&b+d>=C-3)return false;if(a<=6&&b+d>=mj-1&&b<=mj+5)return false; // né davanti alla macelleria
   for(let x=a-1;x<=a+w;x++)for(let y=b-1;y<=b+d;y++)if(!free(x,y))return false;return true};
-  for(let t=0,nb=0,nc=0;t<80&&(nb<2||nc<2);t++){const a=2+ri(R-4),b=2+ri(C-4);
+  for(let t=0,nb=0,nc=0;t<80&&(nb<2||nc<2);t++){const a=6+ri(R-9),b=6+ri(C-9); // mai nelle corsie lungo le pareti
     if(nb<2&&open(a,b,2,2)){put(mk('bancale','i',a,b,2,2,{cat:Math.random()<.5?'ACQUA':'BIBITE'}));nb++}
     else if(nc<2&&open(a,b,1,1)){put(mk('cesta','i',a,b,1,1,{cat:packs[ri(packs.length)]}));nc++}}
   // controllo: dall'ingresso si arriva a ogni mobile, alla bilancia e alle casse
