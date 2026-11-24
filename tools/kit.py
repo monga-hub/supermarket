@@ -15,6 +15,8 @@ EXT = alpha('kit/foglio-extra.jpg')
 SCA = alpha('kit/foglio-scaffali.jpg')
 FRI = alpha('kit/foglio-frighi.jpg')
 CAS = alpha('kit/foglio-cassette.jpg')
+BAN = alpha('kit/foglio-banchi.jpg')
+CES = alpha('kit/foglio-ceste.jpg')
 
 # il foglio mobili ha righe chiare del pavimento sotto lo scaffale doppio: lì uso una soglia più larga
 def loose(img, box):
@@ -74,6 +76,21 @@ PIECES |= full(CAS, 1, None, [
   ('c:INSALATA', (820, 790, 1228, 1258), (820, 1147), (1031, 1257)), ('c:BROCCOLI', (1445, 790, 1853, 1258), (1445, 1147), (1655, 1257)),
   ('c:UVA', (196, 1404, 604, 1882), (196, 1775), (404, 1881)), ('c:CAVOLI', (820, 1428, 1228, 1882), (820, 1775), (1027, 1881)),
   ('c:CAROTE', (1446, 1404, 1853, 1882), (1446, 1775), (1653, 1881))])
+
+# testate: metà destra dello scaffale pieno (1 casella, col fianco)
+PIECES |= {'t:' + n[2:]: dict(p, box=((p['A'][0] + p['B'][0]) // 2, *p['box'][1:]), A=((p['A'][0] + p['B'][0]) // 2, (p['A'][1] + p['B'][1]) // 2), L=1)
+           for n, p in list(PIECES.items()) if n.startswith('s:')}
+PIECES |= full(CES, .7, None, [(n, (x0, y0, x1, y1), (x0 + 15, yl), B) for n, (x0, y0, x1, y1), yl, B in [
+  ('k:PASTA', (68, 235, 431, 888), 790, (249, 887)), ('k:BISCOTTI', (463, 240, 812, 888), 790, (636, 887)),
+  ('k:CEREALI', (850, 235, 1199, 888), 790, (1024, 887)), ('k:CONSERVE', (1237, 286, 1586, 888), 790, (1410, 887)),
+  ('k:CAFFÈ', (1623, 262, 1973, 888), 790, (1798, 887)),
+  ('k:OLIO', (77, 1128, 423, 1769), 1676, (250, 1768)), ('k:VINO', (465, 1125, 810, 1768), 1676, (637, 1767)),
+  ('k:ACQUA', (851, 1147, 1197, 1768), 1676, (1024, 1767)), ('k:BIBITE', (1238, 1188, 1584, 1768), 1676, (1411, 1767)),
+  ('k:RISO', (1626, 1149, 1971, 1768), 1676, (1799, 1767))]])
+PIECES |= full(BAN, 2, None, [('b:ACQUA', (120, 367, 603, 913), (120, 801), (336, 912)), ('b:BIBITE', (649, 370, 1107, 907), (649, 798), (859, 906))])
+PIECES |= full(BAN, 1.5, None, [('salumi2', (1036, 1058, 1558, 1813), (1036, 1573), (1395, 1812))])  # ripetuto 2 volte sul banco da 3
+PIECES |= full(BAN, .8, None, [('bilancia2', (1667, 1100, 1966, 1867), (1667, 1792), (1815, 1866))])
+PIECES['pane2'] = dict(full(BAN, 2, None, [('x', (1207, 270, 1891, 922), (1880, 670), (1394, 921))])['x'], mirror=True)
 
 PRODS = {  # riquadri trovati per righe/colonne vuote; h = altezza finale in px di gioco
   'ACQUA': ((140, 107, 241, 543), 34), 'VINO': ((327, 107, 440, 543), 40), 'OLIO': ((531, 107, 657, 543), 34),
