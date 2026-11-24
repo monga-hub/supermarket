@@ -54,7 +54,7 @@ PIECES = {
                    boards=[347, 241, 135, 30], spans=[(.05, .85)]),
   'bilancia': dict(box=(1347, 1607, 1610, 1864), A=(1358, 1813), B=(1467, 1862), L=.9),
   # foglio macelleria: L in proporzione al bancone (715 px = 3 caselle)
-  'macelleria': dict(sheet=MAC, box=(130, 480, 1330, 1470), A=(200, 1060), B=(915, 1455), L=3),
+  'macelleria': dict(sheet=MAC, box=(130, 480, 1330, 1470), A=(200, 1060), B=(915, 1455), L=4.5),  # 1,5 volte più grande del resto
   'display':    dict(sheet=MAC, box=(1475, 130, 1880, 535), A=(1482, 357), B=(1797, 530), L=1.32),
   'insegna':    dict(sheet=MAC, box=(1475, 555, 1878, 1035), A=(1482, 826), B=(1862, 1022), L=1.6),
 }
