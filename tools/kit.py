@@ -18,7 +18,7 @@ CAS = alpha('kit/foglio-cassette.jpg')
 BAN = alpha('kit/foglio-banchi.jpg')
 CES = alpha('kit/foglio-ceste.jpg')
 VUO = alpha('kit/foglio-vuoti.jpg')
-MC2 = alpha('kit/foglio-macelleria2.jpg')
+MC2 = alpha('kit/foglio-macelleria3.jpg')
 
 # il foglio mobili ha righe chiare del pavimento sotto lo scaffale doppio: lì uso una soglia più larga
 def loose(img, box):
@@ -86,9 +86,8 @@ PIECES |= full(VUO, .7, None, [('v:cesta', (194, 1233, 739, 1916), (194, 1761), 
 PIECES |= full(VUO, 2, None, [('v:bancale', (1147, 1376, 1961, 1914), (1147, 1704), (1533, 1913))])
 
 # macelleria lunga: 3 segmenti di bancone da 5/3 di casella, messi in fila (5 caselle + distributore)
-PIECES |= full(MC2, 5 / 3, None, [('mac1', (60, 700, 665, 1380), (66, 1134), (413, 1372)),
-  ('mac2', (710, 705, 1320, 1385), (717, 1131), (1075, 1376)), ('mac3', (1370, 715, 1935, 1390), (1384, 1150), (1728, 1379))])
-PIECES['mac3']['erase'] = [(1370, 1185), (1548, 1280), (1548, 1440), (1370, 1440)]  # le lattine finite nel foglio
+PIECES |= full(MC2, 5 / 3, None, [('mac1', (60, 505, 790, 1255), (129, 987), (580, 1246)),
+  ('mac2', (925, 466, 1655, 1245), (994, 972), (1445, 1234)), ('mac3', (1775, 484, 2505, 1270), (1844, 1020), (2261, 1261))])
 
 # testate: metà destra dello scaffale pieno (1 casella, col fianco)
 PIECES |= {'t:' + n[2:]: dict(p, box=((p['A'][0] + p['B'][0]) // 2, *p['box'][1:]), A=((p['A'][0] + p['B'][0]) // 2, (p['A'][1] + p['B'][1]) // 2), L=1)
