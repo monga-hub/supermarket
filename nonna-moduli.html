@@ -250,7 +250,7 @@ function tryLevel(){
   // parete destra (j=0): frigoriferi e scaffali a muro
   for(let i=1;i<R-2;){let fr=Math.random()<.55,L=fr?2:3;if(i+L>R-1){if(i+2>R-1)break;fr=true;L=2}wallUnit('i',i,0,L,fr);i+=L+(Math.random()<.25?1:0)}
   // parete sinistra (i=0): banco del pane e scaffali a muro
-  const L=lv(LV),mj=L.meat?2+ri(C-13):-99;if(L.meat)put(mk('macelleria','j',0,mj,7,2,{wall:true})); // macelleria: profonda 2 (macellaio dietro), lunga 7 (bancone 6 + distributore)
+  const L=lv(LV),mj=L.meat?2+ri(C-13):-99;if(L.meat){put(mk('macelleria','j',0,mj,7,2,{wall:true}));for(const j of [mj-1,mj+7])for(const i of [0,1])if(free(i,j))CELL[i][j]=1e9} // una casella vuota ai lati: riservata finché si piazzano i mobili // macelleria: profonda 2 (macellaio dietro), lunga 7 (bancone 6 + distributore)
   for(let t=0;t<20&&!put(mk('pane','j',0,1+ri(C-6),2,1,{wall:true,cat:'PANE'}));t++);
   for(let t=0;t<20;t++){const j=1+ri(C-5);if([0,1,2].every(k=>free(0,j+k))){put(mk('salumi','j',0,j,3,1,{wall:true,cat:'FORMAGGI'}));break}}
   for(let j=1;j<C-1;){const fr=Math.random()<.3,L=fr?2:3;let ok=j+L<=C-1;for(let k=0;k<L&&ok;k++)ok=free(0,j+k);if(!ok){j++;continue}wallUnit('j',0,j,L,fr);j+=L+(Math.random()<.25?1:0)}
@@ -271,6 +271,7 @@ function tryLevel(){
   for(let t=0,nb=0,nc=0;t<80&&(nb<2||nc<2);t++){const a=6+ri(R-9),b=6+ri(C-9); // mai nelle corsie lungo le pareti
     if(nb<2&&open(a,b,2,2)){put(mk('bancale','i',a,b,2,2,{cat:Math.random()<.5?'ACQUA':'BIBITE'}));nb++}
     else if(nc<2&&open(a,b,1,1)){put(mk('cesta','i',a,b,1,1,{cat:packs[ri(packs.length)]}));nc++}}
+  for(const r of CELL)r.forEach((v,k)=>{if(v===1e9)r[k]=-1}); // le caselle riservate tornano pavimento
   // controllo: dall'ingresso si arriva a ogni mobile, alla bilancia e alle casse
   START=[R-1.5,C-1.5];const seen=new Set([(R-2)+','+(C-2)]),q=[[R-2,C-2]];
   while(q.length){const [a,b]=q.shift();for(const [da,db] of [[1,0],[-1,0],[0,1],[0,-1]]){const k=(a+da)+','+(b+db);if(free(a+da,b+db)&&!seen.has(k)){seen.add(k);q.push([a+da,b+db])}}}
