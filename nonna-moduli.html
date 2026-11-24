@@ -29,9 +29,12 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 #mbox{position:relative;width:min(100vw,520px);aspect-ratio:1193/2576;margin:0 auto;background:url(mappa-citta1.jpg?v=3) center/100% 100%}
 .nodo{position:absolute;transform:translate(-50%,-50%);width:14%;aspect-ratio:1.8;border:0;border-radius:50%;background:none;color:var(--ink);font:800 26px "Gioco",monospace;padding:0} /* il cerchio è nel disegno: il pulsante è trasparente sopra */
 .nodo.chiuso{background:rgba(70,86,76,.6);font-size:16px}.nodo.qui{box-shadow:0 0 0 4px #ffc400,0 0 16px 6px #ffe680;animation:pulsa .7s infinite alternate}@keyframes pulsa{to{transform:translate(-50%,-50%) scale(1.12)}}
-.nodo b{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:4px;font-size:18px;line-height:1.1;color:#ffc400;white-space:nowrap;background:rgba(28,58,36,.8);border-radius:8px;padding:0 5px}
+.nodo b{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:-2px}
 #mnonna{position:absolute;width:58px;transform:translate(-50%,-125%);border-radius:50%;border:3px solid var(--ink);pointer-events:none}
-.nodo b s,.bigstar s{color:#8a9a90;text-decoration:none}.bigstar{display:block;font-size:40px;color:#ffc400;text-shadow:2px 2px 0 var(--ink);letter-spacing:.1em}
+/* stelle: tre a semicerchio, quella centrale più grande e più alta */
+.stelle{display:flex;align-items:flex-end;justify-content:center}.stelle svg{width:32px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.45))}.stelle svg:nth-child(2){width:42px;margin:0 -4px 8px}.nodo .stelle .off path{fill:#55645a;opacity:1}
+.stelle path{stroke:#1c3a24;stroke-width:1.8;stroke-linejoin:round}.stelle .on path{fill:url(#gStella)}.stelle .off path{fill:#d8d0b4;opacity:.85}
+.bigstar{margin:2px 0 8px}.bigstar svg{width:58px}.bigstar svg:nth-child(2){width:76px;margin:0 -4px 14px}
 #over[hidden]{display:none}
 #over{position:fixed;inset:0;display:grid;place-items:center;background:rgba(10,8,16,.55)}
 #over div{background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:6px;padding:16px 22px;max-width:min(86vw,380px);text-align:center;box-shadow:6px 6px 0 rgba(0,0,0,.4)}
@@ -116,6 +119,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
  <h3>AUDIO</h3><button id="audio"></button>
  <h3>SALVA</h3><div id="slots"></div>
  <p><button id="amappa">MAPPA</button> <button id="chiudi">CHIUDI</button></p></div></div>
+<svg width="0" height="0" style="position:absolute"><linearGradient id="gStella" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4a8"/><stop offset=".45" stop-color="#ffd02a"/><stop offset="1" stop-color="#f28a00"/></linearGradient></svg>
 <div id="mappa" hidden><div id="mtop"><b>PICCOLA CITTÀ</b><span id="mstars"></span><button id="mmenu">MENU</button></div><div id="mbox"></div></div>
 <div id="home" hidden><canvas id="hcv" width="380" height="170"></canvas><h1>La spesa della nonna</h1>
  <div id="hbtn"><button id="hNuova">NUOVA PARTITA</button><button id="hCont">CONTINUA PARTITA</button><button id="hCarica">CARICA PARTITA</button><button id="hAudio"></button></div></div>
@@ -160,7 +164,7 @@ let LV=0;try{LV=+(localStorage.getItem('nonna-lv')||0)}catch{}
 const saveLV=()=>{try{localStorage.setItem('nonna-lv',LV)}catch{}};
 // STELLE per nodo: 3 se finisci con almeno il 40% del tempo, 2 col 20%, 1 se finisci. Chi giocava prima ha 1 stella per ogni livello superato.
 let STARS;try{STARS=JSON.parse(localStorage.getItem('nonna-stelle'))}catch{}if(!Array.isArray(STARS))STARS=Array(LV).fill(1);
-const saveStars=()=>{try{localStorage.setItem('nonna-stelle',JSON.stringify(STARS))}catch{}},starsOf=t=>t>=.4?3:t>=.2?2:1,stelle=n=>'★'.repeat(n)+'<s>★</s>'.repeat(3-n);
+const saveStars=()=>{try{localStorage.setItem('nonna-stelle',JSON.stringify(STARS))}catch{}},starsOf=t=>t>=.4?3:t>=.2?2:1,stelle=n=>'<span class="stelle">'+[0,1,2].map(k=>`<svg viewBox="0 0 24 24" class="${k<n?'on':'off'}"><path d="M12 1.8l3.1 6.4 7 1-5.1 5 1.2 7L12 17.9l-6.2 3.3 1.2-7-5.1-5 7-1z"/></svg>`).join('')+'</span>';
 let MAC,MAC_NODE,R,C,OX,OY,BW=2000,BH=1400,CELL,MODS=[],SPOTS=[],NODES=[],ADJ=[],SCALE,SCALE_STAND,SCALE_NODE,CASSE=[],START,STAGE;
 const iso=(i,j,h=0)=>[OX+(i-j)*T,OY+(i+j)*U-h];
 const toTile=(x,y)=>{const a=(x-OX)/T,b=(y-OY)/U;return [(a+b)/2,(b-a)/2]};
@@ -469,7 +473,7 @@ function say(t,d=1.6){G.msgT=d;$('msg').textContent=t;$('msg').hidden=false}
 function intro(){const L=lv(LV),o=$('over');o.querySelector('h1').textContent='Livello '+(LV+1);
   $('overTxt').textContent=L.txt+' Hai '+L.time+' secondi.';$('choice').hidden=!L.cart;$('cta').textContent=L.cart?'Scegli: cestino o carrello':'Tocca PRENDI per iniziare'}
 function end(win){$('bil').hidden=true;$('choice').hidden=true;G.weighing=false;G.state=win?'win':'lose';G.pose=win?'win':'lose';G.poseT=1e9;$('over').hidden=false;$('over').querySelector('h1').textContent=win?'Livello '+(LV+1)+' superato!':'Il supermercato chiude!';$('cta').textContent=win?'Tocca PRENDI per tornare alla mappa':'Tocca PRENDI per riprovare il livello '+(LV+1);if(win){G.stars=starsOf(G.time/lv(LV).time);STARS[LV]=Math.max(STARS[LV]||0,G.stars);saveStars()}
-  $('overTxt').innerHTML=win?`<span class="bigstar">${stelle(G.stars)}</span>Ce l'hai fatta con ${Math.ceil(G.time)} secondi di anticipo.${G.stars<3?' Per '+(G.stars+1)+' stelle servono '+Math.ceil(lv(LV).time*(G.stars===1?.2:.4))+' secondi.':''}`:`Ti mancavano: ${G.list.filter(e=>!e.got).map(e=>e.n.toLowerCase()).join(', ')}.`}
+  $('overTxt').innerHTML=win?`<span class="bigstar" style="display:block">${stelle(G.stars)}</span>Ce l'hai fatta con ${Math.ceil(G.time)} secondi di anticipo.${G.stars<3?' Per '+(G.stars+1)+' stelle servono '+Math.ceil(lv(LV).time*(G.stars===1?.2:.4))+' secondi.':''}`:`Ti mancavano: ${G.list.filter(e=>!e.got).map(e=>e.n.toLowerCase()).join(', ')}.`}
 const nearScale=(r=110)=>!!SCALE&&Math.hypot(G.x-SCALE_STAND[0],(G.y-SCALE_STAND[1])*1.3)<r;
 function target(){const [gi,gj]=toTile(G.x,G.y);let best=null,bd=1.25;for(const s of SPOTS){const d=Math.hypot(s.i-gi,s.j-gj);if(d<bd){bd=d;best=s}}return best}
 function pick(){
@@ -678,7 +682,7 @@ function render(now){
     ctx.strokeStyle='rgba(255,0,255,.5)';ctx.lineWidth=2;NODES.forEach((a,i)=>ADJ[i].forEach(j=>{if(j>i){ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...NODES[j]);ctx.stroke()}}))}
 }
 // CARICAMENTO: controlla se su internet c'è una versione nuova (VER più alto) e intanto carica immagini e font. Ogni cosa pronta = un pezzo di barra.
-const VER=54; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
+const VER=55; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
 const checkUpd=()=>Promise.race([new Promise(r=>setTimeout(r,3000)),fetch(location.pathname+'?nv='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{
   const v=+(t.match(/const VER=(\d+)/)||[])[1];if(v>VER&&!location.search.includes('v='+v)){$('loadTxt').textContent='Versione nuova! La scarico…';location.replace(location.pathname+'?v='+v+location.hash);return new Promise(()=>{})}
   $('loadTxt').textContent='Gioco aggiornato ✓'})]).catch(()=>{}); // nell'Artifact il controllo non funziona: si va avanti
