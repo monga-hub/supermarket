@@ -26,7 +26,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 #mappa{position:fixed;inset:0;z-index:40;background:#9cc47a;overflow-y:auto;touch-action:pan-y}#mappa[hidden]{display:none}
 #mtop{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--paper);border-bottom:4px solid var(--ink);color:var(--ink);font-size:22px}
 #mtop b{flex:1;color:var(--red);white-space:nowrap}#mtop span{white-space:nowrap}#mtop span{color:#c88a00}#mtop button{font:20px "Gioco",monospace;border:3px solid var(--ink);border-radius:5px;background:#fff;color:var(--ink)}
-#mbox{position:relative;width:min(100vw,520px);aspect-ratio:1193/2576;margin:0 auto;background:url(mappa-citta1.jpg?v=3) center/100% 100%}
+.citta{position:relative;width:min(100vw,520px);aspect-ratio:1000/2159;margin:0 auto;background:center/100% 100%}.citta.buia{filter:grayscale(.75) brightness(.75)}.citta>i{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);font:22px "Gioco",monospace;font-style:normal;color:#fff;background:rgba(28,58,36,.85);border:3px solid var(--ink);border-radius:6px;padding:0 10px;white-space:nowrap}
 .nodo{position:absolute;transform:translate(-50%,-50%);width:14%;aspect-ratio:1.8;border:0;border-radius:50%;background:none;color:var(--ink);font:800 26px "Gioco",monospace;padding:0} /* il cerchio è nel disegno: il pulsante è trasparente sopra */
 .nodo.chiuso{background:rgba(70,86,76,.6);font-size:16px}.nodo.qui{box-shadow:0 0 0 4px #ffc400,0 0 16px 6px #ffe680;animation:pulsa .7s infinite alternate}@keyframes pulsa{to{transform:translate(-50%,-50%) scale(1.12)}}
 .nodo b{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:4px;font-size:18px;line-height:1.1;color:#ffc400;white-space:nowrap;background:rgba(28,58,36,.8);border-radius:8px;padding:0 5px}.nodo b s{color:#8a9a90;text-decoration:none}
@@ -126,7 +126,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
  <p><button id="amappa">MAPPA</button> <button id="chiudi">CHIUDI</button></p></div></div>
 <svg width="0" height="0" style="position:absolute"><linearGradient id="gStella" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4a8"/><stop offset=".45" stop-color="#ffd02a"/><stop offset="1" stop-color="#f28a00"/></linearGradient></svg>
 <div id="carte" hidden><h2 id="ctit"></h2><p>Scegli un talento</p><div id="cbox"></div></div>
-<div id="mappa" hidden><div id="mtop"><b>PICCOLA CITTÀ</b><span id="mstars"></span><button id="mmenu">MENU</button></div><div id="mbox"></div></div>
+<div id="mappa" hidden><div id="mtop"><b id="mtit">PICCOLA CITTÀ</b><span id="mstars"></span><button id="mmenu">MENU</button></div><div id="mbox"></div></div>
 <div id="home" hidden><canvas id="hcv" width="380" height="170"></canvas><h1>La spesa della nonna</h1>
  <div id="hbtn"><button id="hNuova">NUOVA PARTITA</button><button id="hCont">CONTINUA PARTITA</button><button id="hCarica">CARICA PARTITA</button><button id="hAudio"></button></div></div>
 <div id="load"><svg viewBox="0 0 300 250"><path id="arco" d="M38,175 A112,112 0 0 1 262,175" fill="none"/>
@@ -162,6 +162,24 @@ const LEVELS=[
  {fresh:3,pack:3,meat:1,time:145,npc:4,phone:1,tills:1,wet:2,cart:1,txt:"Sette cose in lista: cestino o carrello?"},
  {fresh:3,pack:3,meat:1,time:150,npc:4,phone:1,tills:1,wet:2,cart:1,out:1,txt:"NOVITÀ: PRODOTTO ESAURITO! Se lo scaffale è vuoto aspetta il rifornimento o prendi il prodotto che ti suggerisce la lista."},
  {fresh:3,pack:3,meat:1,time:145,npc:4,phone:1,tills:1,wet:2,cart:1,out:1,txt:"Il supermercato completo. Forza, nonna!"},
+ // CENTRO STORICO (17-24) e METROPOLI (25-32): niente meccaniche nuove, liste più lunghe e più pozzanghere. Circa 18 secondi a oggetto, che scendono verso 16,5.
+ ...[[4,3,155,{},"CENTRO STORICO: le liste si allungano. Otto cose da prendere!"],
+   [4,3,155,{wet:3},"Piove in centro: tre pozzanghere. Guarda dove metti i piedi."],
+   [2,5,150,{},"Tanti confezionati e poca verdura: corri tra gli scaffali."],
+   [5,2,160,{},"Giorno di mercato: cinque verdure da pesare. Ricorda i codici!"],
+   [4,4,170,{},"Nove cose in lista: senza carrello non ce la fai."],
+   [4,3,150,{phone:0,wet:3},"Il nipote oggi non chiama: niente scuse, sbrigati!"],
+   [4,4,165,{wet:3},"Nove cose e tre pozzanghere."],
+   [4,4,160,{wet:3},"Ultimo supermercato del centro. Forza, nonna!"],
+   [4,4,165,{},"METROPOLI: supermercati enormi e sempre pieni."],
+   [5,4,185,{wet:3},"Dieci cose da prendere: pensa bene al giro."],
+   [3,6,175,{},"Sei confezionati da scovare negli scaffali."],
+   [5,4,180,{wet:3},"Vigilia di Natale: tutti fanno la spesa insieme."],
+   [4,5,175,{wet:3},"Dieci cose, poco tempo."],
+   [5,5,190,{wet:3},"Undici cose in lista: la spesa più lunga di sempre."],
+   [5,5,185,{wet:3},"Il supermercato chiude presto!"],
+   [5,5,180,{wet:3},"L'IPERMERCATO! L'ultima sfida della nonna."]
+  ].map(([fresh,pack,time,x,txt])=>({fresh,pack,meat:1,time,npc:4,phone:1,tills:1,wet:2,cart:1,out:1,...x,txt}))
 ];
 // dopo l'ultimo: come l'ultimo, 5 secondi in meno a livello (minimo 100)
 const lv=n=>n<LEVELS.length?LEVELS[n]:{...LEVELS.at(-1),time:Math.max(100,145-5*(n-LEVELS.length+1)),txt:'Il supermercato chiude sempre prima!'};
@@ -170,8 +188,10 @@ let LV=0;try{LV=+(localStorage.getItem('nonna-lv')||0)}catch{}
 const saveLV=()=>{try{localStorage.setItem('nonna-lv',LV)}catch{}};
 // STELLE per nodo: 3 se finisci con almeno il 40% del tempo, 2 col 20%, 1 se finisci. Chi giocava prima ha 1 stella per ogni livello superato.
 let STARS;try{STARS=JSON.parse(localStorage.getItem('nonna-stelle'))}catch{}if(!Array.isArray(STARS))STARS=Array(LV).fill(1);
-const saveStars=()=>{try{localStorage.setItem('nonna-stelle',JSON.stringify(STARS))}catch{}},starsOf=t=>t>=.4?3:t>=.2?2:1,totStars=()=>STARS.reduce((a,b)=>a+(b||0),0),livNonna=()=>Math.floor(totStars()/3),stelleMappa=n=>'★'.repeat(n)+'<s>★</s>'.repeat(3-n),stelle=n=>'<span class="stelle">'+[0,1,2].map(k=>`<svg viewBox="0 0 24 24" class="${k<n?'on':'off'}"><path d="M12 1.8l3.1 6.4 7 1-5.1 5 1.2 7L12 17.9l-6.2 3.3 1.2-7-5.1-5 7-1z"/></svg>`).join('')+'</span>';
-// TALENTI: ogni 3 stelle la nonna sale di livello e sceglie tra il prossimo talento di ciascun ramo (stile Vampire Survivors su due alberi)
+const saveStars=()=>{try{localStorage.setItem('nonna-stelle',JSON.stringify(STARS))}catch{}},starsOf=t=>t>=.4?3:t>=.2?2:1,totStars=()=>STARS.reduce((a,b)=>a+(b||0),0),livNonna=()=>SOGLIE.filter(n=>n<=totStars()).length,stelleMappa=n=>'★'.repeat(n)+'<s>★</s>'.repeat(3-n),stelle=n=>'<span class="stelle">'+[0,1,2].map(k=>`<svg viewBox="0 0 24 24" class="${k<n?'on':'off'}"><path d="M12 1.8l3.1 6.4 7 1-5.1 5 1.2 7L12 17.9l-6.2 3.3 1.2-7-5.1-5 7-1z"/></svg>`).join('')+'</span>';
+// TALENTI: la nonna sale di livello a queste stelle totali (ogni volta ne servono una in più; 4 talenti nella prima città, tutti e 10 solo verso la fine)
+const SOGLIE=[4,9,15,22,30,39,49,60,72,85];
+// la nonna sale di livello e sceglie tra il prossimo talento di ciascun ramo (stile Vampire Survivors su due alberi)
 const RAMI={s:{nome:'SCATTANTE',t:[['s1','🏃','Passo svelto','Cammini più veloce (+15%)'],['s2','🦶','Piedi saldi','Lo scivolone dura la metà'],['s3','💪','Gomiti larghi','La spinta si ricarica in 2 secondi invece di 5'],['s4','🛒','Carrello leggero','Col carrello vai veloce come a mani libere'],['s5','🙏','Spinta gentile','Le spinte non tolgono più secondi']]},
   o:{nome:'ORGANIZZATA',t:[['o1','✋','Mano ferma','Gli errori costano 1 secondo invece di 3'],['o2','📋','Lista in ordine','La lista segue il percorso dall\'ingresso'],['o3','🔢','Codici segnati','Sulla lista c\'è il codice bilancia di frutta e verdura'],['o4','🥩','Amica del macellaio','Il macellaio ti serve in 1 secondo invece di 3'],['o5','⏱','Partenza sprint','+8 secondi a inizio livello']]}};
 let TAL;try{TAL=JSON.parse(localStorage.getItem('nonna-talenti'))}catch{}if(!Array.isArray(TAL))TAL=[];
@@ -696,7 +716,7 @@ function render(now){
     ctx.strokeStyle='rgba(255,0,255,.5)';ctx.lineWidth=2;NODES.forEach((a,i)=>ADJ[i].forEach(j=>{if(j>i){ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...NODES[j]);ctx.stroke()}}))}
 }
 // CARICAMENTO: controlla se su internet c'è una versione nuova (VER più alto) e intanto carica immagini e font. Ogni cosa pronta = un pezzo di barra.
-const VER=62; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
+const VER=63; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
 const checkUpd=()=>Promise.race([new Promise(r=>setTimeout(r,3000)),fetch(location.pathname+'?nv='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{
   const v=+(t.match(/const VER=(\d+)/)||[])[1];if(v>VER&&!location.search.includes('v='+v)){$('loadTxt').textContent='Versione nuova! La scarico…';location.replace(location.pathname+'?v='+v+location.hash);return new Promise(()=>{})}
   $('loadTxt').textContent='Gioco aggiornato ✓'})]).catch(()=>{}); // nell'Artifact il controllo non funziona: si va avanti
@@ -721,14 +741,18 @@ $('menu').addEventListener('pointerdown',e=>{e.stopPropagation();const b=e.targe
   else if(b.dataset.s){try{localStorage.setItem(slotKey(b.dataset.s),JSON.stringify({lv:LV,stars:STARS,tal:TAL,t:Date.now()}))}catch{}beep(880)}
   else if(b.dataset.l){const v=readSlot(b.dataset.l);if(v){LV=v.lv;saveLV();STARS=v.stars||Array(v.lv).fill(1);saveStars();TAL=v.tal||[];saveTal();$('menu').hidden=true;showMap();beep(660);return}}
   drawMenu()});
-// ---------- MAPPA: piccola città, 8 nodi = livelli 1-8. Un nodo si apre quando il precedente ha almeno una stella.
-const CITY={name:'PICCOLA CITTÀ',first:0,nodes:[[57.5,92.2],[40.5,81.8],[38.9,69.1],[52.9,58.3],[40.1,45.4],[54.6,33.9],[46.5,22.9],[49.7,13.2]]};
+// ---------- MAPPA: 4 zone da 8 nodi, una sopra l'altra (si sale dal basso). Un nodo si apre quando il precedente ha almeno una stella.
+const CITIES=[{name:'PICCOLA CITTÀ',img:'mappa-citta1.jpg?v=3',nodes:[[57.5,92.2],[40.5,81.8],[38.9,69.1],[52.9,58.3],[40.1,45.4],[54.6,33.9],[46.5,22.9],[49.7,13.2]]},
+  {name:'PERIFERIA',img:'mappa-citta2.jpg',nodes:[[46.9,89.4],[66.8,80.2],[35.2,68.6],[52.7,59.7],[57.8,48.9],[35.9,38.7],[58.6,28.3],[59.4,17.9]]},
+  {name:'CENTRO STORICO',img:'mappa-citta3.jpg',nodes:[[55.9,90.8],[39.4,79.7],[57.1,68.0],[63.7,56.0],[48.7,44.4],[50.2,34.5],[50.2,25.2],[50.2,14.7]]},
+  {name:'METROPOLI',img:'mappa-citta4.jpg',nodes:[[45.0,91.9],[67.4,81.5],[30.7,68.9],[62.5,58.8],[50.0,45.4],[30.8,33.5],[50.0,26.6],[50.0,14.6]]}];
 const ALL=/lv=/.test(location.hash); // col link #lv=N tutto aperto, per provare
 function showMap(){if(G)G.state='title';$('bil').hidden=$('over').hidden=$('home').hidden=$('menu').hidden=true;$('mappa').hidden=false;
-  const N=CITY.nodes,open=k=>ALL||k===0||(STARS[CITY.first+k-1]||0)>0,qui=Math.max(0,N.findIndex((p,k)=>open(k)&&!STARS[CITY.first+k])),[qx,qy]=N[qui<0?N.length-1:qui];
-  $('mstars').textContent='👵'+(TAL.length+1)+' ★'+totStars()+'/'+N.length*3;
-  $('mbox').innerHTML=N.map(([x,y],k)=>{const n=CITY.first+k,st=STARS[n]||0;return `<button class="nodo${open(k)?'':' chiuso'}${k===qui?' qui':''}" data-n="${n}" style="left:${x}%;top:${y}%">${open(k)?n+1:'🔒'}${open(k)?'<b>'+stelleMappa(st)+'</b>':''}</button>`}).join('')
-    +`<img id="mnonna" src="icon-192.png" style="left:${qx}%;top:${qy}%">`;
+  const open=n=>ALL||n===0||(STARS[n-1]||0)>0,tot=CITIES.length*8;let qui=[...Array(tot).keys()].findIndex(n=>open(n)&&!STARS[n]);if(qui<0)qui=tot-1;
+  $('mtit').textContent=CITIES[qui/8|0].name;$('mstars').textContent='👵'+(TAL.length+1)+' ★'+totStars()+'/'+tot*3;
+  $('mbox').innerHTML=CITIES.map((c,ci)=>`<div class="citta${open(ci*8)?'':' buia'}" style="background-image:url(${c.img})">`+c.nodes.map(([x,y],k)=>{const n=ci*8+k,st=STARS[n]||0;
+      return `<button class="nodo${open(n)?'':' chiuso'}${n===qui?' qui':''}" data-n="${n}" style="left:${x}%;top:${y}%">${open(n)?n+1:'🔒'}${open(n)?'<b>'+stelleMappa(st)+'</b>':''}</button>`}).join('')
+    +((qui/8|0)===ci?`<img id="mnonna" src="icon-192.png" style="left:${c.nodes[qui%8][0]}%;top:${c.nodes[qui%8][1]}%">`:'')+`<i>${c.name}</i></div>`).reverse().join('');
   requestAnimationFrame(()=>$('mbox').querySelector('.qui')?.scrollIntoView({block:'center'}));showCarte()}
 // una carta per ramo: il prossimo talento non ancora preso. Si sceglie appena le stelle bastano (anche più volte di fila).
 function showCarte(){if(livNonna()<=TAL.length)return;const opz=Object.entries(RAMI).map(([k,r])=>[k,r,r.t.find(t=>!tal(t[0]))]).filter(o=>o[2]);if(!opz.length)return;
