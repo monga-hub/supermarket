@@ -14,6 +14,10 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 #choice button{font:800 14px/1.2 system-ui,sans-serif;padding:8px 10px;margin:4px;border:3px solid var(--ink);border-radius:6px;background:#fff;color:var(--ink)}
 #time{position:fixed;right:calc(10px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));background:#2a0c10;color:#ff5040;border:3px solid #1a1420;border-radius:4px;padding:2px 12px;font-size:28px;font-variant-numeric:tabular-nums;box-shadow:4px 4px 0 rgba(0,0,0,.35)}
 #msg{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--mint);color:var(--ink);border:3px solid var(--ink);border-radius:4px;padding:4px 14px;font-size:18px;font-weight:700}
+#load{position:fixed;inset:0;z-index:50;display:grid;place-content:center;justify-items:center;gap:10px;background:var(--mint);transition:opacity .4s}
+#load.via{opacity:0;pointer-events:none}#load svg{width:min(78vw,340px)}#load text{font:800 30px "Gioco",monospace;fill:var(--red);letter-spacing:.05em;paint-order:stroke;stroke:var(--paper);stroke-width:5px}
+#lbar{width:min(64vw,260px);height:18px;border:3px solid var(--ink);border-radius:4px;background:var(--paper);box-shadow:4px 4px 0 rgba(0,0,0,.25)}#lbar i{display:block;height:100%;width:0;background:var(--red);transition:width .3s}
+#loadTxt{margin:0;color:var(--ink);font-size:18px}
 #over[hidden]{display:none}
 #over{position:fixed;inset:0;display:grid;place-items:center;background:rgba(10,8,16,.55)}
 #over div{background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:6px;padding:16px 22px;max-width:min(86vw,380px);text-align:center;box-shadow:6px 6px 0 rgba(0,0,0,.4)}
@@ -98,6 +102,11 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
  <h3>AUDIO</h3><button id="audio"></button>
  <h3>SALVA</h3><div id="slots"></div>
  <p><button id="chiudi">CHIUDI</button></p></div></div>
+<div id="load"><svg viewBox="0 0 300 250"><path id="arco" d="M38,175 A112,112 0 0 1 262,175" fill="none"/>
+ <text><textPath href="#arco" startOffset="50%" text-anchor="middle">LA SPESA DELLA NONNA</textPath></text>
+ <clipPath id="tondo"><circle cx="150" cy="168" r="76"/></clipPath><circle cx="150" cy="168" r="80" fill="#1c3a24"/>
+ <image href="icon-192.png" x="74" y="92" width="152" height="152" clip-path="url(#tondo)" style="image-rendering:pixelated"/></svg>
+ <div id="lbar"><i></i></div><p id="loadTxt">Cerco aggiornamenti…</p></div>
 <div id="over"><div><h1>La spesa della nonna</h1><p id="overTxt">Ogni partita il supermercato è disposto in modo diverso. Trova quello che c'è nella lista e vai alla cassa prima che chiuda. Frutta e verdura vanno pesate: prenota la bilancia e ricorda il codice scritto sulla cassetta.</p><p id="choice" hidden><button data-c="0">🧺 CESTINO<br><small>veloce · max 4</small></button><button data-c="1">🛒 CARRELLO<br><small>lento · non salta</small></button></p><p><b id="cta">Tocca PRENDI per iniziare</b></p></div></div>
 <script>
 // ===================================================================================
@@ -647,7 +656,14 @@ function render(now){
   if(DEBUG){ctx.fillStyle='rgba(255,0,0,.25)';for(let i=0;i<R;i++)for(let j=0;j<C;j++)if(!free(i,j))poly(ctx,[iso(i,j),iso(i+1,j),iso(i+1,j+1),iso(i,j+1)],'rgba(255,0,0,.25)');
     ctx.strokeStyle='rgba(255,0,255,.5)';ctx.lineWidth=2;NODES.forEach((a,i)=>ADJ[i].forEach(j=>{if(j>i){ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...NODES[j]);ctx.stroke()}}))}
 }
-Promise.all([...[atlas,kit].map(im=>new Promise(r=>im.complete&&im.naturalWidth?r():im.onload=r)),document.fonts.load('700 26px "Gioco"').catch(()=>{})]).then(()=>{
+// CARICAMENTO: controlla se su internet c'è una versione nuova (VER più alto) e intanto carica immagini e font. Ogni cosa pronta = un pezzo di barra.
+const VER=49; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
+const checkUpd=()=>Promise.race([new Promise(r=>setTimeout(r,3000)),fetch(location.pathname+'?nv='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{
+  const v=+(t.match(/const VER=(\d+)/)||[])[1];if(v>VER&&!location.search.includes('v='+v)){$('loadTxt').textContent='Versione nuova! La scarico…';location.replace(location.pathname+'?v='+v+location.hash);return new Promise(()=>{})}
+  $('loadTxt').textContent='Gioco aggiornato ✓'})]).catch(()=>{}); // nell'Artifact il controllo non funziona: si va avanti
+let loaded=0;const jobs=[checkUpd(),...[atlas,kit].map(im=>new Promise(r=>im.complete&&im.naturalWidth?r():im.onload=r)),document.fonts.load('700 26px "Gioco"').catch(()=>{}),new Promise(r=>setTimeout(r,1200))];
+jobs.forEach(j=>j.then(()=>$('lbar').firstChild.style.width=100*++loaded/jobs.length+'%'));
+Promise.all(jobs).then(()=>{setTimeout(()=>$('load').classList.add('via'),300);
   start(false);G.state='title';$('over').hidden=DEBUG;intro();READY=true}); // i clienti girano già dietro la schermata iniziale
 let last=performance.now();function loop(t){const dt=Math.min(.05,(t-last)/1000);last=t;
   if(!$('menu').hidden){render(t);return requestAnimationFrame(loop)}
