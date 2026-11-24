@@ -240,7 +240,7 @@ const TALL={macelleria:440,scaffale:300,frigo:330,frutta:170,pane:260,cassa:260,
 // GENERATORE: mette i moduli sulla griglia secondo poche regole e controlla che tutto sia raggiungibile.
 // ===================================================================================
 function tryLevel(){
-  R=21+ri(3);C=24+ri(2);/* corsie larghe 3 caselle: negozio un po' più grande */CELL=Array.from({length:R},()=>Array(C).fill(-1));MODS=[];CASSE=[];
+  R=24+ri(3);C=27+ri(2);/* corsie larghe 4 caselle: più respiro tra scaffali alti */CELL=Array.from({length:R},()=>Array(C).fill(-1));MODS=[];CASSE=[];
   const mk=(type,ax,i,j,L,D,x)=>Object.assign({type,ax,i,j,L,D,w:ax==='i'?L:D,d:ax==='i'?D:L},x);
   const put=m=>{for(let a=m.i;a<m.i+m.w;a++)for(let b=m.j;b<m.j+m.d;b++)if(!free(a,b))return false;
     for(let a=m.i;a<m.i+m.w;a++)for(let b=m.j;b<m.j+m.d;b++)CELL[a][b]=MODS.length;MODS.push(m);return true};
@@ -256,15 +256,13 @@ function tryLevel(){
   // casse vicino all'angolo destro, con la cassiera
   for(const [j,row] of [[3,3],[6,1]]){put(mk('cassa','i',R-3,j,3,2,{row}))}
   // centro: zona frutta (banchi da 2 cassette) e zona scaffali doppi; quale sta davanti è a caso
-  const fruitBack=Math.random()<.5,fruitRows=fruitBack?[4,8]:[C-7,C-3],gz=fruitBack?[12,C-3]:[4,C-11];
+  const fruitBack=Math.random()<.5,fruitRows=fruitBack?[4,9]:[C-8,C-3],gz=fruitBack?[14,C-3]:[4,C-13];
   const fresh=shuffle(Object.keys(FRUIT));let fk=0;
-  const gaps=[];for(const j of fruitRows)for(let i=4;i+2<=(j>=10?R-2:R-5);i+=4){put(mk('frutta','i',i,j,2,1,{items:[fresh[fk++%fresh.length],fresh[fk++%fresh.length]]}));if(j===fruitRows[0]&&i+2<=R-6)gaps.push(i+2)}
+  const gaps=[];for(const j of fruitRows)for(let i=4;i+2<=(j>=10?R-2:R-5);i+=5){put(mk('frutta','i',i,j,2,1,{items:[fresh[fk++%fresh.length],fresh[fk++%fresh.length]]}));if(j===fruitRows[0]&&i+2<=R-6)gaps.push(i+2)}
   const gi=gaps[ri(gaps.length)],sj=fruitRows[0];if(L.fresh)put(mk('bilancia','i',gi,sj,1,1));
-  if(Math.random()<.5)for(let j=gz[0];j<=gz[1];j+=4)for(let i=4+ri(2),e=j>=10?R-2:R-5;i+4<=e;i+=6+ri(2))put(mk('scaffale','i',i,j,4,1,{cat:packs[pk++%packs.length]}))
-  else for(let i=4;i<=R-6;i+=4)for(let j=gz[0]+ri(2);j+4<=gz[1]+1;j+=6+ri(2))put(mk('scaffale','j',i,j,4,1,{cat:packs[pk++%packs.length]}))
-  // testate in fondo alle file che danno su uno spazio libero
-  for(const g of MODS.filter(m=>m.type==='scaffale'&&!m.wall))if(Math.random()<.6){
-    const [a,b,da,db]=g.ax==='i'?[g.i+4,g.j,1,0]:[g.i,g.j+4,0,1];if(free(a,b)&&free(a+da,b+db)&&free(a+2*da,b+2*db))put(mk('testata',g.ax==='i'?'j':'i',a,b,1,1,{cat:packs[pk++%packs.length]}))}
+  if(Math.random()<.5)for(let j=gz[0];j<=gz[1];j+=5)for(let i=4+ri(2),e=j>=10?R-2:R-5;i+4<=e;i+=6+ri(2))put(mk('scaffale','i',i,j,4,1,{cat:packs[pk++%packs.length]}))
+  else for(let i=4;i<=R-6;i+=5)for(let j=gz[0]+ri(2);j+4<=gz[1]+1;j+=6+ri(2))put(mk('scaffale','j',i,j,4,1,{cat:packs[pk++%packs.length]}))
+  // ponytail: niente testate (il foglio non le ha fatte da 1 casella); i pezzi t: restano nell'atlante se tornano
   // bancali e ceste solo in mezzo a spazi aperti (tutt'intorno libero), così non chiudono le corsie
   // ...e mai a ridosso dell'ingresso (casella R-2,C-2), dove nasce la nonna
   const open=(a,b,w,d)=>{if(a+w>=R-3&&b+d>=C-3)return false;if(a<=4&&b+d>=mj-1&&b<=mj+5)return false; // né davanti alla macelleria
@@ -612,7 +610,7 @@ function render(now){
   ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#141018';ctx.fillRect(0,0,W,H);
   if(!READY)return;
   const fx=G?G.x:BW/2,fyy=G?G.y:BH/2;
-  const z=DEBUG?Math.min(W/BW,H/BH):Math.max(H/820,W/1750),vw=W/z,vh=H/z;
+  const z=DEBUG?Math.min(W/BW,H/BH):Math.max(H/1150,W/1900),vw=W/z,vh=H/z;
   const cx=Math.max(0,Math.min(BW-vw,fx-vw/2)),cy=Math.max(0,Math.min(BH-vh,fyy-120-vh/2));
   ctx.setTransform(z,0,0,z,-cx*z,-cy*z);ctx.drawImage(STAGE,0,0);ctx.imageSmoothingEnabled=false;
   for(const w of WET){ctx.fillStyle='rgba(120,190,255,.45)';ctx.beginPath();ctx.ellipse(w.x,w.y,70,34,0,0,7);ctx.fill();ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.ellipse(w.x-18,w.y-8,20,6,0,0,7);ctx.fill()}
