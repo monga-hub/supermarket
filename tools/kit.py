@@ -85,8 +85,8 @@ PIECES |= full(VUO, 2, .45, [('v:frigo', (1411, 104, 1943, 1034), (1411, 833), (
 PIECES |= full(VUO, .7, None, [('v:cesta', (194, 1233, 739, 1916), (194, 1761), (468, 1915))])
 PIECES |= full(VUO, 2, None, [('v:bancale', (1147, 1376, 1961, 1914), (1147, 1704), (1533, 1913))])
 
-# macelleria lunga: 3 segmenti di bancone da 5/3 di casella, messi in fila (5 caselle + distributore)
-PIECES |= full(MC2, 5 / 3, None, [('mac1', (60, 505, 790, 1255), (129, 987), (580, 1246)),
+# macelleria lunga: 3 segmenti di bancone da 2 caselle, messi in fila (6 caselle + distributore)
+PIECES |= full(MC2, 2, None, [('mac1', (60, 505, 790, 1255), (129, 987), (580, 1246)),
   ('mac2', (925, 466, 1655, 1245), (994, 972), (1445, 1234)), ('mac3', (1775, 484, 2505, 1270), (1844, 1020), (2261, 1261))])
 
 # testate: metà destra dello scaffale pieno (1 casella, col fianco)
