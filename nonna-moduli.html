@@ -137,7 +137,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
  <clipPath id="tondo"><circle cx="150" cy="168" r="76"/></clipPath><circle cx="150" cy="168" r="80" fill="#1c3a24"/>
  <image href="icon-192.png" x="74" y="92" width="152" height="152" clip-path="url(#tondo)" style="image-rendering:pixelated"/></svg>
  <div id="lbar"><i></i></div><p id="loadTxt">Cerco aggiornamenti…</p></div>
-<div id="over"><div><h1>La spesa della nonna</h1><p id="overTxt">Ogni partita il supermercato è disposto in modo diverso. Trova quello che c'è nella lista e vai alla cassa prima che chiuda. Frutta e verdura vanno pesate: prenota la bilancia e ricorda il codice scritto sulla cassetta.</p><p id="choice" hidden><button data-c="0">🧺 CESTINO<br><small>veloce · max 4</small></button><button data-c="1">🛒 CARRELLO<br><small>lento · non salta</small></button></p><p><b id="cta">Tocca PRENDI per iniziare</b></p></div></div>
+<div id="over"><div><h1>La spesa della nonna</h1><p id="overTxt">Ogni partita il supermercato è disposto in modo diverso. Trova quello che c'è nella lista e vai alla cassa prima che chiuda. Frutta e verdura vanno pesate: prenota la bilancia e ricorda il codice scritto sulla cassetta.</p><p id="choice" hidden><button data-c="0">🧺 CESTINO<br><small>veloce · pesa a ogni cosa</small></button><button data-c="1">🛒 CARRELLO<br><small>lento · non pesa · non salta</small></button></p><p><b id="cta">Tocca PRENDI per iniziare</b></p></div></div>
 <script>
 // ===================================================================================
 // GRIGLIA ISOMETRICA. Una casella = rombo 116x60 px. i scende verso destra, j verso sinistra.
@@ -161,8 +161,8 @@ const LEVELS=[
  {fresh:3,pack:2,meat:1,time:135,npc:4,phone:1,tills:1,txt:"Con 6 pezzi la cassa veloce non ti prende: scegli la fila giusta."},
  {fresh:3,pack:2,meat:1,time:140,npc:4,phone:1,tills:1,wet:2,txt:"NOVITÀ: PAVIMENTO BAGNATO! Dove c'è il cartello giallo si scivola: SALTA la pozzanghera o girale intorno."},
  {fresh:3,pack:2,meat:1,time:135,npc:4,phone:1,tills:1,wet:2,txt:"Pozzanghere, telefono e file alle casse: tutto insieme."},
- {fresh:3,pack:3,meat:1,time:150,npc:4,phone:1,tills:1,wet:2,cart:1,txt:"NOVITÀ: CESTINO o CARRELLO? Il cestino è veloce ma tiene 4 cose (poi il carrello lo prendi all'ingresso). Il carrello tiene tutto ma è lento e non salta."},
- {fresh:3,pack:3,meat:1,time:145,npc:4,phone:1,tills:1,wet:2,cart:1,txt:"Sette cose in lista: cestino o carrello?"},
+ {fresh:3,pack:3,meat:1,time:150,npc:4,phone:1,tills:1,wet:2,cart:1,txt:"NOVITÀ: CESTINO o CARRELLO? Il cestino è veloce, ma ogni cosa che metti dentro ti rallenta e da 6 cose non salti più. Il carrello è lento ma non pesa mai, e non salta."},
+ {fresh:3,pack:3,meat:1,time:145,npc:4,phone:1,tills:1,wet:2,cart:1,txt:"Sette cose in lista: conviene il cestino o il carrello?"},
  {fresh:3,pack:3,meat:1,time:150,npc:4,phone:1,tills:1,wet:2,cart:1,out:1,txt:"NOVITÀ: PRODOTTO ESAURITO! Se lo scaffale è vuoto aspetta il rifornimento o prendi il prodotto che ti suggerisce la lista."},
  {fresh:3,pack:3,meat:1,time:145,npc:4,phone:1,tills:1,wet:2,cart:1,out:1,txt:"Il supermercato completo. Forza, nonna!"},
  // CENTRO STORICO (17-24) e METROPOLI (25-32): niente meccaniche nuove, liste più lunghe e più pozzanghere. Circa 18 secondi a oggetto, che scendono verso 16,5.
@@ -504,7 +504,9 @@ function phone(){const inL=new Set(G.list.flatMap(e=>[e.n,e.alt])),add=[...new S
   else if(add.length){const n=add[ri(add.length)];G.list.push({n,got:false,nu:true});G.time+=10;say('📞 Il nipote: «Nonna, prendi anche '+n+'!» +10s',3.5)}
   drawList()}
 const load=()=>G.list.filter(e=>e.got).length+G.bag.length; // pezzi nel cestino
-function drawList(){$('lvl').textContent='LV '+(LV+1)+' · LISTA'+(lv(LV).cart?G.cart?' · 🛒':' · 🧺 '+load()+'/4':'');
+// CESTINO CHE PESA (solo nei livelli con la scelta): ogni pezzo rallenta del 5,5% (minimo 45%), da 6 pezzi non si salta. Il carrello va sempre a 270: pareggio verso 5 pezzi.
+const peso=()=>lv(LV).cart&&!G.cart?Math.max(.45,1-.055*load()):1,TROPPO=6;
+function drawList(){$('lvl').textContent='LV '+(LV+1)+' · LISTA'+(lv(LV).cart?G.cart?' · 🛒':' · 🧺 '+(load()?'−'+Math.round(100-peso()*100)+'%':''):'');
   $('list').innerHTML=G.list.map(e=>`<li class="${e.got?'got':G.bag.includes(e.n)?'hand':''}${e.nu?' nu':''}">${e.n}${e.alt&&e.seen&&!e.got?' <small>o '+e.alt+'</small>':''}${FRESH.has(e.n)&&!e.got?' <small>⚖'+(tal('o3')?' '+CODE[e.n]:'')+'</small>':''}${e.n==='CARNE'&&!e.got?' <small>🎫</small>':''}</li>`).join('')}
 function say(t,d=1.6){G.msgT=d;$('msg').textContent=t;$('msg').hidden=false}
 function intro(){const L=lv(LV),o=$('over');o.querySelector('h1').textContent='Livello '+(LV+1);
@@ -529,7 +531,6 @@ function pick(){
   if(!s){if(G.bag.length)say('Hai verdura da pesare: prenota la bilancia!');return}
   if(OUT&&OUT.t>0&&s.n===OUT.n){const e=G.list.find(e=>e.n===s.n);if(e&&!e.got&&e.alt){e.seen=true;drawList();return say(s.n+' esaurito! Rifornimento tra '+Math.ceil(OUT.t)+'s… oppure prendi '+e.alt,2.8)}return say(s.n+' esaurito')}
   const e=G.list.find(e=>e.n===s.n)||G.list.find(e=>e.alt===s.n&&e.seen&&!e.got);
-  if(e&&!e.got&&!G.bag.includes(e.n)&&lv(LV).cart&&!G.cart&&load()>=4)return say('Cestino pieno! Il carrello lo prendi all\'ingresso',2.4);
   if(!e){G.time-=ERR();act(G,'lose',.7);say('Non è in lista! -'+ERR()+'s');return beep(150,.2,'sawtooth')}
   if(e.got)return say('Già nel cestino');
   if(G.bag.includes(e.n))return say('Ce l\'hai già nel sacchetto: va pesata');
@@ -544,7 +545,7 @@ function shove(){if(!G||G.state!=='play'||G.shoveT>0||G.weighing||G.serving)retu
   if(hit&&!tal('s5'))G.time-=3;say(hit?'Permesso, permesso!'+(tal('s5')?'':' -3s'):'Permesso!… ma non c\'è nessuno',1.2);beep(hit?260:200,.1,'square')}
 function checkDone(){if(G.list.every(e=>e.got))setTimeout(()=>G.state==='play'&&say('Ora vai alla cassa!'),1200)}
 function dash(){if(!G||G.state!=='play'||!tal('s6')||G.dashCD>0||G.weighing||G.serving||G.till||G.slipT>0)return;G.dashT=2;G.dashCD=10;beep(880,.08)}
-function jump(){if(!G||G.state!=='play'||G.z>0||G.weighing||G.serving||G.till||G.slipT>0)return;if(G.cart)return say('Col carrello non si salta!');G.vz=520;G.z=1;beep(520,.07)}
+function jump(){if(!G||G.state!=='play'||G.z>0||G.weighing||G.serving||G.till||G.slipT>0)return;if(G.cart)return say('Col carrello non si salta!');if(lv(LV).cart&&load()>=TROPPO)return say('Cestino troppo pesante per saltare!');G.vz=520;G.z=1;beep(520,.07)}
 
 // ---------- comandi
 const stick=$('stick'),knob=$('knob');let sv=[0,0],sid=null;
@@ -641,7 +642,7 @@ function update(dt){
   else if(G.slipT>0)G.slipT-=dt;
   else if(G.till){if(Math.hypot(...inputVec())>.5){const q=G.till.q;q.splice(q.indexOf(G),1);G.till=null;G.tillCD=1.5;G.pose=null;say('Hai lasciato la fila')}}
   else{const [vx,vy]=inputVec(),m=Math.hypot(vx,vy);
-    if(m>.12){const sp=(G.cart&&!tal('s4')?270:380)*(tal('s1')?1.15:1)*(G.dashT>0?1.6:1)*dt,nx=G.x+vx*sp,ny=G.y+vy*sp*.75;face(G,vx,vy);
+    if(m>.12){const sp=(G.cart&&!tal('s4')?270:380*peso())*(tal('s1')?1.15:1)*(G.dashT>0?1.6:1)*dt,nx=G.x+vx*sp,ny=G.y+vy*sp*.75;face(G,vx,vy);
       if(walkable(nx,G.y)&&!hits(G,nx,G.y))G.x=nx;if(walkable(G.x,ny)&&!hits(G,G.x,ny))G.y=ny;G.walk+=dt*9;G.moving=true}}
   if(G.z>0){G.vz-=2200*dt;G.z+=G.vz*dt;if(G.z<=0){G.z=0;G.vz=0}}
   if(G.tillCD>0)G.tillCD-=dt;
@@ -655,7 +656,6 @@ function update(dt){
   if(G.slipCD>0)G.slipCD-=dt;
   if(G.moving&&!(G.z>0)&&!(G.slipCD>0)&&WET.some(w=>((G.x-w.x)/70)**2+((G.y-w.y)/34)**2<1)){G.slipT=tal('s2')?.65:1.3;G.slipCD=3;act(G,'slip',G.slipT);say('Scivolone! Le pozzanghere si saltano',1.8);beep(140,.3,'sawtooth')}
   updateClean(CLEAN,dt);updateMag(MAG,dt);
-  if(lv(LV).cart&&!G.cart&&load()>=4&&Math.hypot(G.x-iso(...START)[0],G.y-iso(...START)[1])<150){Object.assign(G,{cart:true,who:'nonnac',rx:50,ry:20,pose:null});drawList();say('Preso il carrello!');beep(600,.08)}
   if(G.phoneAt>0&&G.time<G.phoneAt){G.phoneAt=-1;phone()}
   if(OUT&&OUT.t>0&&(OUT.t-=dt)<=0){stock();const e=G.list.find(e=>e.n===OUT.n);if(e&&!e.got)say(OUT.n+' rifornito!',2)}
   const t=Math.ceil(G.time);$('time').textContent=Math.floor(t/60)+':'+String(t%60).padStart(2,'0');$('time').style.color=t<=10?'#ffd040':'#ff5040';
@@ -703,7 +703,6 @@ function render(now){
     if(G.bag.length&&!nearScale()){const b=Math.sin(now/180)*8;tag(SCALE.x,SCALE.y-255+b,QUEUE[0]===G?'⚖ TOCCA A TE':'⚖ BILANCIA',QUEUE[0]===G?'#ffe6a0':'#a8e4b4')}
     const s=G.weighing||(G.bag.length&&nearScale())?null:target();if(s){const [x,y]=iso(s.i,s.j,s.m.labelH||150);tag(x,y,FRESH.has(s.n)?s.n+' · '+CODE[s.n]:s.n,FRESH.has(s.n)?'#a8e4b4':'#e8c878')}
     if(G.bag.length&&nearScale()&&!G.weighing){const me=QUEUE[0]===G,k=QUEUE.indexOf(G);tag(SCALE.x,SCALE.y-245,me?'PESA QUI':k>0?'SEI '+(k+1)+'ª':'PRENOTA',me?'#a8e4b4':'#f0c0a0')}}
-  if(G&&G.state==='play'&&lv(LV).cart&&!G.cart&&load()>=4){const [x,y]=iso(R-.5,C-3.3);tag(x,y-150+Math.sin(now/180)*8,'🛒 CARRELLI','#ffe6a0')}
   if(G&&G.state==='play'){for(const c of CASSE)if(c.fast){const [x,y]=iso(c.m.i+1.5,c.m.j+1,0);tag(x,y-190,'⚡ MAX 5 PEZZI','#ffe6a0')}
     if(OUT&&OUT.t>0)for(const m of MODS)if(m.cat===OUT.n){const [x,y]=iso(m.i+m.w/2,m.j+m.d/2,(m.labelH||150)+40),t=Math.ceil(OUT.t);tag(x,y,'ESAURITO '+Math.floor(t/60)+':'+String(t%60).padStart(2,'0'),'#f0a0a0')}}
   // display della macelleria: numero chiamato in rosso, lampeggia mentre scadono i 5 s
@@ -722,7 +721,7 @@ function render(now){
     ctx.strokeStyle='rgba(255,0,255,.5)';ctx.lineWidth=2;NODES.forEach((a,i)=>ADJ[i].forEach(j=>{if(j>i){ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...NODES[j]);ctx.stroke()}}))}
 }
 // CARICAMENTO: controlla se su internet c'è una versione nuova (VER più alto) e intanto carica immagini e font. Ogni cosa pronta = un pezzo di barra.
-const VER=65; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
+const VER=66; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
 const checkUpd=()=>Promise.race([new Promise(r=>setTimeout(r,3000)),fetch(location.pathname+'?nv='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{
   const v=+(t.match(/const VER=(\d+)/)||[])[1];if(v>VER&&!location.search.includes('v='+v)){$('loadTxt').textContent='Versione nuova! La scarico…';location.replace(location.pathname+'?v='+v+location.hash);return new Promise(()=>{})}
   $('loadTxt').textContent='Gioco aggiornato ✓'})]).catch(()=>{}); // nell'Artifact il controllo non funziona: si va avanti
