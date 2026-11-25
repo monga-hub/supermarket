@@ -45,12 +45,14 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 #over div{background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:6px;padding:16px 22px;max-width:min(86vw,380px);text-align:center;box-shadow:6px 6px 0 rgba(0,0,0,.4)}
 #over h1{margin:0 0 6px;font-size:26px;color:var(--red);text-wrap:balance}#over p{margin:6px 0;font-size:16px;line-height:1.35}
 #stick{position:fixed;left:calc(22px + env(safe-area-inset-left,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));width:124px;height:124px;border-radius:50%;background:rgba(20,30,24,.35);border:3px solid rgba(248,244,224,.7)}
+#zona{position:fixed;left:0;top:0;bottom:0;width:50%;touch-action:none}#stick{pointer-events:none;opacity:.55}#stick.vivo{opacity:1}
 #knob{position:absolute;left:35px;top:35px;width:54px;height:54px;border-radius:50%;background:var(--paper);border:3px solid var(--ink);box-sizing:border-box;pointer-events:none}
 .btn{position:fixed;border-radius:50%;border:3px solid var(--ink);font:700 15px "Gioco",monospace;display:grid;place-items:center;padding:0;box-shadow:inset 0 -5px 0 rgba(0,0,0,.2),3px 3px 0 rgba(0,0,0,.35)}
 .btn:active{transform:scale(.94)}.btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
 #prendi{right:calc(22px + env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));width:98px;height:98px;background:#b8c8b0;color:var(--ink);opacity:.75}
 #prendi.on{background:var(--gold);opacity:1}
 #spingi{right:calc(132px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:72px;height:72px;background:#b8a0a0;color:#3a1010;opacity:.6;font-size:13px}
+#scatta{right:calc(30px + env(safe-area-inset-right,0px));bottom:calc(134px + env(safe-area-inset-bottom,0px));width:64px;height:64px;background:#a0b8a0;color:#10301a;opacity:.6;font-size:12px}#scatta.on{background:#7ee08a;opacity:1}#scatta[hidden]{display:none}
 #spingi.on{background:#f0a070;opacity:1}
 #time{z-index:5}
 #gear{position:fixed;z-index:9;right:calc(112px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));width:44px;height:44px;padding:0;border:3px solid var(--ink);border-radius:6px;background:var(--paper);color:var(--ink);font-size:26px;line-height:1;box-shadow:4px 4px 0 rgba(0,0,0,.35)}#gear:active{transform:scale(.94)}
@@ -115,9 +117,10 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
  <div id="cod" hidden><div><b>CODICI FRUTTA E VERDURA</b><div id="codlist"></div><small>tocca per chiudere</small></div></div>
  <div class="col" id="cR"><div class="sign">DA PESARE</div><div id="todo" class="items"></div><img class="prop" src="bil-basket.png" alt=""></div>
 </div>
-<div id="stick" aria-label="Levetta di movimento"><div id="knob"></div></div>
+<div id="zona"></div><div id="stick" aria-label="Levetta di movimento"><div id="knob"></div></div>
 <button class="btn" id="salta" aria-label="Salta">SALTA</button>
 <button class="btn" id="spingi" aria-label="Spingi">SPINGI</button>
+<button class="btn" id="scatta" aria-label="Scatta" hidden>SCATTA</button>
 <button class="btn" id="prendi" aria-label="Prendi">PRENDI</button>
 <button id="gear" aria-label="Menu">⚙</button>
 <div id="menu" hidden><div><h2>MENU</h2>
@@ -192,7 +195,7 @@ const saveStars=()=>{try{localStorage.setItem('nonna-stelle',JSON.stringify(STAR
 // TALENTI: la nonna sale di livello a queste stelle totali (ogni volta ne servono una in più; 4 talenti nella prima città, tutti e 10 solo verso la fine)
 const SOGLIE=[4,9,15,22,30,39,49,60,72,85];
 // la nonna sale di livello e sceglie tra il prossimo talento di ciascun ramo (stile Vampire Survivors su due alberi)
-const RAMI={s:{nome:'SCATTANTE',t:[['s1','🏃','Passo svelto','Cammini più veloce (+15%)'],['s2','🦶','Piedi saldi','Lo scivolone dura la metà'],['s3','💪','Gomiti larghi','La spinta si ricarica in 2 secondi invece di 5'],['s4','🛒','Carrello leggero','Col carrello vai veloce come a mani libere'],['s5','🙏','Spinta gentile','Le spinte non tolgono più secondi']]},
+const RAMI={s:{nome:'SCATTANTE',t:[['s1','🏃','Passo svelto','Cammini più veloce (+15%)'],['s2','🦶','Piedi saldi','Lo scivolone dura la metà'],['s6','💨','Scatto','Nuovo pulsante SCATTA: 2 secondi di corsa veloce, poi 10 di ricarica'],['s3','💪','Gomiti larghi','La spinta si ricarica in 2 secondi invece di 5'],['s4','🛒','Carrello leggero','Col carrello vai veloce come a mani libere'],['s5','🙏','Spinta gentile','Le spinte non tolgono più secondi']]},
   o:{nome:'ORGANIZZATA',t:[['o1','✋','Mano ferma','Gli errori costano 1 secondo invece di 3'],['o2','📋','Lista in ordine','La lista segue il percorso dall\'ingresso'],['o3','🔢','Codici segnati','Sulla lista c\'è il codice bilancia di frutta e verdura'],['o4','🥩','Amica del macellaio','Il macellaio ti serve in 1 secondo invece di 3'],['o5','⏱','Partenza sprint','+8 secondi a inizio livello']]}};
 let TAL;try{TAL=JSON.parse(localStorage.getItem('nonna-talenti'))}catch{}if(!Array.isArray(TAL))TAL=[];
 const saveTal=()=>{try{localStorage.setItem('nonna-talenti',JSON.stringify(TAL))}catch{}},tal=id=>TAL.includes(id),ERR=()=>tal('o1')?1:3;
@@ -540,19 +543,22 @@ function shove(){if(!G||G.state!=='play'||G.shoveT>0||G.weighing||G.serving)retu
     const k=1/(Math.hypot(dx,dy)||1);n.push={vx:dx*k*650,vy:dy*k*420,t:.3};n.path=[];n.pause=rnd(1.2,2);n.pose=MAD[n.who];n.front=true;n.flip=dx>0}
   if(hit&&!tal('s5'))G.time-=3;say(hit?'Permesso, permesso!'+(tal('s5')?'':' -3s'):'Permesso!… ma non c\'è nessuno',1.2);beep(hit?260:200,.1,'square')}
 function checkDone(){if(G.list.every(e=>e.got))setTimeout(()=>G.state==='play'&&say('Ora vai alla cassa!'),1200)}
+function dash(){if(!G||G.state!=='play'||!tal('s6')||G.dashCD>0||G.weighing||G.serving||G.till||G.slipT>0)return;G.dashT=2;G.dashCD=10;beep(880,.08)}
 function jump(){if(!G||G.state!=='play'||G.z>0||G.weighing||G.serving||G.till||G.slipT>0)return;if(G.cart)return say('Col carrello non si salta!');G.vz=520;G.z=1;beep(520,.07)}
 
 // ---------- comandi
 const stick=$('stick'),knob=$('knob');let sv=[0,0],sid=null;
 function stickAt(e){const r=stick.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),m=Math.hypot(dx,dy),lim=r.width/2-12,k=m>lim?lim/m:1;sv=[dx*k/lim,dy*k/lim];knob.style.transform=`translate(${dx*k}px,${dy*k}px)`}
-stick.addEventListener('pointerdown',e=>{sid=e.pointerId;stick.setPointerCapture(sid);stickAt(e)});
-stick.addEventListener('pointermove',e=>{if(e.pointerId===sid)stickAt(e)});
-const se=e=>{if(e.pointerId===sid){sid=null;sv=[0,0];knob.style.transform=''}};stick.addEventListener('pointerup',se);stick.addEventListener('pointercancel',se);
-$('prendi').addEventListener('pointerdown',e=>{e.preventDefault();pick()});$('salta').addEventListener('pointerdown',e=>{e.preventDefault();jump()});$('spingi').addEventListener('pointerdown',e=>{e.preventDefault();shove()});
+// levetta mobile: tocchi un punto qualsiasi della metà sinistra e la levetta si centra lì; quando stacchi torna al suo posto
+const zona=$('zona');zona.addEventListener('pointerdown',e=>{if(sid!==null)return;e.preventDefault();sid=e.pointerId;zona.setPointerCapture(sid);
+  Object.assign(stick.style,{left:e.clientX-62+'px',top:e.clientY-62+'px',bottom:'auto'});stick.classList.add('vivo');stickAt(e)});
+zona.addEventListener('pointermove',e=>{if(e.pointerId===sid)stickAt(e)});
+const se=e=>{if(e.pointerId===sid){sid=null;sv=[0,0];knob.style.transform='';stick.style.left=stick.style.top=stick.style.bottom='';stick.classList.remove('vivo')}};zona.addEventListener('pointerup',se);zona.addEventListener('pointercancel',se);
+$('prendi').addEventListener('pointerdown',e=>{e.preventDefault();pick()});$('salta').addEventListener('pointerdown',e=>{e.preventDefault();jump()});$('spingi').addEventListener('pointerdown',e=>{e.preventDefault();shove()});$('scatta').addEventListener('pointerdown',e=>{e.preventDefault();dash()});
 $('choice').addEventListener('pointerdown',e=>{const b=e.target.closest('button');if(b)CHOICE=+b.dataset.c}); // poi il tocco arriva a #over e parte la partita
 $('over').addEventListener('pointerdown',()=>pick());
 const keys={},KD={ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1],ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0]};
-addEventListener('keydown',e=>{if(G&&G.weighing){if(/^\d$/.test(e.key))key(e.key);else if(e.key==='Enter')key('OK');else if(e.key==='Backspace')key('C');else if(e.key==='Escape')closeBil();return}keys[e.code]=true;if(e.repeat)return;if(e.code==='Space'){e.preventDefault();jump()}if(e.code==='KeyE'||e.code==='Enter')pick();if(e.code==='KeyQ')shove()});
+addEventListener('keydown',e=>{if(G&&G.weighing){if(/^\d$/.test(e.key))key(e.key);else if(e.key==='Enter')key('OK');else if(e.key==='Backspace')key('C');else if(e.key==='Escape')closeBil();return}keys[e.code]=true;if(e.repeat)return;if(e.code==='Space'){e.preventDefault();jump()}if(e.code==='KeyE'||e.code==='Enter')pick();if(e.code==='ShiftLeft')dash();if(e.code==='KeyQ')shove()});
 addEventListener('keyup',e=>keys[e.code]=false);
 function inputVec(){let [a,b]=sv;for(const k in KD)if(keys[k]){a+=KD[k][0];b+=KD[k][1]}const m=Math.hypot(a,b);return m>1?[a/m,b/m]:[a,b]}
 
@@ -629,13 +635,13 @@ function update(dt){
   updateMac(dt);drawMac();{const mh=MQ[0]===G;if(mh&&!G.wasMH){say('Numero '+pad2(G.ticket)+'! Tocca a te in macelleria'+(MQ.length>1?': hai 5 secondi':''),2.2);beep(1175,.1);setTimeout(()=>beep(1175,.1),160)}G.wasMH=mh}
   const head=QUEUE[0]===G;if(head&&!G.wasHead){say(QUEUE.length>1?'Tocca a te! Hai 5 secondi per arrivare alla bilancia':'Tocca a te alla bilancia!',2.2);beep(1046,.1);setTimeout(()=>beep(1046,.1),160)}G.wasHead=head;
   G.moving=false;if(G.poseT>0&&(G.poseT-=dt)<=0)G.pose=null;if(G.shoveT>0)G.shoveT-=dt;
-  $('spingi').textContent=G.shoveT>0?Math.ceil(G.shoveT)+'s':'SPINGI';$('spingi').classList.toggle('on',!(G.shoveT>0));
+  $('spingi').textContent=G.shoveT>0?Math.ceil(G.shoveT)+'s':'SPINGI';if(G.dashT>0)G.dashT-=dt;if(G.dashCD>0)G.dashCD-=dt;$('scatta').hidden=!tal('s6');$('scatta').textContent=G.dashCD>0?Math.ceil(G.dashCD)+'s':'SCATTA';$('scatta').classList.toggle('on',!(G.dashCD>0));$('spingi').classList.toggle('on',!(G.shoveT>0));
   if(G.weighing){G.front=false;updBil(dt)}
   else if(G.serving){G.front=false;if((G.serveT-=dt)<=0){G.serving=false;leaveMac(G);const e=G.list.find(e=>e.n==='CARNE');if(e)e.got=true;act(G,'box',.6);drawList();say('Carne nel cestino!');beep(880);setTimeout(()=>beep(1175),70);checkDone()}}
   else if(G.slipT>0)G.slipT-=dt;
   else if(G.till){if(Math.hypot(...inputVec())>.5){const q=G.till.q;q.splice(q.indexOf(G),1);G.till=null;G.tillCD=1.5;G.pose=null;say('Hai lasciato la fila')}}
   else{const [vx,vy]=inputVec(),m=Math.hypot(vx,vy);
-    if(m>.12){const sp=(G.cart&&!tal('s4')?270:380)*(tal('s1')?1.15:1)*dt,nx=G.x+vx*sp,ny=G.y+vy*sp*.75;face(G,vx,vy);
+    if(m>.12){const sp=(G.cart&&!tal('s4')?270:380)*(tal('s1')?1.15:1)*(G.dashT>0?1.6:1)*dt,nx=G.x+vx*sp,ny=G.y+vy*sp*.75;face(G,vx,vy);
       if(walkable(nx,G.y)&&!hits(G,nx,G.y))G.x=nx;if(walkable(G.x,ny)&&!hits(G,G.x,ny))G.y=ny;G.walk+=dt*9;G.moving=true}}
   if(G.z>0){G.vz-=2200*dt;G.z+=G.vz*dt;if(G.z<=0){G.z=0;G.vz=0}}
   if(G.tillCD>0)G.tillCD-=dt;
@@ -716,7 +722,7 @@ function render(now){
     ctx.strokeStyle='rgba(255,0,255,.5)';ctx.lineWidth=2;NODES.forEach((a,i)=>ADJ[i].forEach(j=>{if(j>i){ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...NODES[j]);ctx.stroke()}}))}
 }
 // CARICAMENTO: controlla se su internet c'è una versione nuova (VER più alto) e intanto carica immagini e font. Ogni cosa pronta = un pezzo di barra.
-const VER=64; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
+const VER=65; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
 const checkUpd=()=>Promise.race([new Promise(r=>setTimeout(r,3000)),fetch(location.pathname+'?nv='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{
   const v=+(t.match(/const VER=(\d+)/)||[])[1];if(v>VER&&!location.search.includes('v='+v)){$('loadTxt').textContent='Versione nuova! La scarico…';location.replace(location.pathname+'?v='+v+location.hash);return new Promise(()=>{})}
   $('loadTxt').textContent='Gioco aggiornato ✓'})]).catch(()=>{}); // nell'Artifact il controllo non funziona: si va avanti
