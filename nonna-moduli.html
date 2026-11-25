@@ -680,7 +680,7 @@ function render(now){
   ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#141018';ctx.fillRect(0,0,W,H);
   if(!READY)return;
   const fx=G?G.x:BW/2,fyy=G?G.y:BH/2;
-  const z=DEBUG?Math.min(W/BW,H/BH):Math.max(H/1150,W/1900),vw=W/z,vh=H/z;
+  const z=DEBUG?Math.min(W/BW,H/BH):Math.max(H/(H>W?1350:1150),W/1900),vw=W/z,vh=H/z;
   const cx=Math.max(0,Math.min(BW-vw,fx-vw/2)),cy=Math.max(0,Math.min(BH-vh,fyy-120-vh/2));
   ctx.setTransform(z,0,0,z,-cx*z,-cy*z);ctx.drawImage(STAGE,0,0);ctx.imageSmoothingEnabled=false;
   for(const w of WET){ctx.fillStyle='rgba(120,190,255,.45)';ctx.beginPath();ctx.ellipse(w.x,w.y,70,34,0,0,7);ctx.fill();ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.ellipse(w.x-18,w.y-8,20,6,0,0,7);ctx.fill()}
@@ -716,7 +716,7 @@ function render(now){
     ctx.strokeStyle='rgba(255,0,255,.5)';ctx.lineWidth=2;NODES.forEach((a,i)=>ADJ[i].forEach(j=>{if(j>i){ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...NODES[j]);ctx.stroke()}}))}
 }
 // CARICAMENTO: controlla se su internet c'è una versione nuova (VER più alto) e intanto carica immagini e font. Ogni cosa pronta = un pezzo di barra.
-const VER=63; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
+const VER=64; // ponytail: alzare a ogni pubblicazione, sennò il telefono non sa che c'è una versione nuova
 const checkUpd=()=>Promise.race([new Promise(r=>setTimeout(r,3000)),fetch(location.pathname+'?nv='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{
   const v=+(t.match(/const VER=(\d+)/)||[])[1];if(v>VER&&!location.search.includes('v='+v)){$('loadTxt').textContent='Versione nuova! La scarico…';location.replace(location.pathname+'?v='+v+location.hash);return new Promise(()=>{})}
   $('loadTxt').textContent='Gioco aggiornato ✓'})]).catch(()=>{}); // nell'Artifact il controllo non funziona: si va avanti
